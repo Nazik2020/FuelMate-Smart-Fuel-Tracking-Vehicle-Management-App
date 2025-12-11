@@ -91,6 +91,7 @@ export default function RideScreen() {
     distance: string;
     duration: string;
   } | null>(null);
+  const [markersReady, setMarkersReady] = useState(false);
   const mapRef = useRef<any>(null);
 
   // Default location (Galle, Sri Lanka)
@@ -118,6 +119,14 @@ export default function RideScreen() {
         setLoading(false);
       }
     })();
+  }, []);
+
+  // Stop marker blinking after initial render
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setMarkersReady(true);
+    }, 2000);
+    return () => clearTimeout(timer);
   }, []);
 
   const centerOnUser = () => {
@@ -425,7 +434,7 @@ export default function RideScreen() {
                 longitude: station.longitude,
               }}
               onPress={() => setSelectedStation(station)}
-              tracksViewChanges={false}
+              tracksViewChanges={!markersReady}
             >
               <View style={styles.customMarker}>
                 <View
@@ -434,7 +443,7 @@ export default function RideScreen() {
                     isNearest && styles.nearestMarkerPin,
                   ]}
                 >
-                  <Ionicons name="flame" size={12} color="#fff" />
+                  <Ionicons name="flame" size={14} color="#fff" />
                 </View>
                 <View
                   style={[
@@ -894,9 +903,9 @@ const styles = StyleSheet.create({
   },
   markerPin: {
     backgroundColor: "#F5A623",
-    width: 26,
-    height: 26,
-    borderRadius: 13,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 2,
@@ -904,9 +913,6 @@ const styles = StyleSheet.create({
   },
   nearestMarkerPin: {
     backgroundColor: "#0D7377",
-    width: 30,
-    height: 30,
-    borderRadius: 15,
   },
   markerTip: {
     width: 0,
