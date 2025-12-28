@@ -1,36 +1,36 @@
 import React from "react";
-import { View, Text,StyleSheet } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 
-interface prop{
+interface prop {
 
-    title :string,
-    value:string
+  title: string,
+  value: string
 
 }
 
-const Rectangle2: React.FC<prop>=({title,value})=> {
+const Rectangle2: React.FC<prop> = ({ title, value }) => {
 
-    return (
+  return (
 
-        <View style = {styles.cardR1}>
+    <View style={styles.cardR1}>
 
-            <View style={styles.inner}>
+      <View style={styles.inner}>
 
-                <Text style={styles.text}>{title}</Text>
-                <Text style={styles.text2}>{value}</Text>
+        <Text style={styles.text}>{title}</Text>
+        <Text style={styles.text2}>{value}</Text>
 
-            </View>
+      </View>
 
-        </View>
+    </View>
 
 
-    );
+  );
 
 }
 
 const styles = StyleSheet.create({
 
-    cardR1: {
+  cardR1: {
     backgroundColor: "#ffffff", // bg-white
     borderRadius: 12,           // rounded
     overflow: "hidden",
@@ -40,23 +40,24 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 4, // Android shadow
     //marginVertical: 10,
-    
+
   },
 
   inner: {
     padding: 14, // p-6
   },
-  
+
   text: {
     fontSize: 15,
-    color: "#074396ff", // text-slate-500
+    color: "#9CA3AF", // Ash/Gray for label
     lineHeight: 22,
-    margin:2,
+    margin: 2,
   },
 
   text2: {
     fontSize: 20,
-    color: "#074396ff", // text-slate-500
+    color: "#0D7377", // Green for value
+    fontWeight: "bold",
     lineHeight: 22,
   },
 

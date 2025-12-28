@@ -1,18 +1,17 @@
 // VINDYA - Home/Dashboard Screen
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import { Colors } from "@/constants/theme";
+import CardMExpense from "@/components/DashBoard Components/CardMExpense";
 import CardMSpend from "@/components/DashBoard Components/CardMSpend";
 import Rectangle2 from "@/components/DashBoard Components/Rectangle2";
-import CardMExpense from "@/components/DashBoard Components/CardMExpense";
 import Rectangle3 from "@/components/DashBoard Components/Rectangle3";
+import { Ionicons } from "@expo/vector-icons";
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function HomeScreen() {
   return (
@@ -31,34 +30,34 @@ export default function HomeScreen() {
 
         {/* Placeholder content - Vindya will build this */}
         <View style={styles.placeholder}>
-        <CardMSpend></CardMSpend>
+          <CardMSpend></CardMSpend>
         </View>
 
         <View style={styles.smallCardRow}>
           <View style={styles.Cformgroup} >
-        <Rectangle2 title = "Average Efficiency"  value="32.5 MPG"/>
-        </View>
-        <View style={styles.Cformgroup}>
-          <Rectangle2 title="Last Fill" value="3 days ago"></Rectangle2>
-        </View>
+            <Rectangle2 title="Average Efficiency" value="32.5 MPG" />
+          </View>
+          <View style={styles.Cformgroup}>
+            <Rectangle2 title="Last Fill" value="3 days ago"></Rectangle2>
+          </View>
         </View>
 
         <View style={styles.placeholder}>
-        <CardMExpense/> 
+          <CardMExpense />
         </View>
         <View>
           <Text style={styles.text4}>Recent Fuel Logs</Text>
         </View>
         <View style={styles.placeholder}>
-          <Rectangle3 name="Shell Station" value="Rs 4000"  date="Oct 28, 2023"/>
+          <Rectangle3 name="Shell Station" value="Rs 4000" date="Oct 28, 2023" />
         </View>
         <View style={styles.placeholder}>
-          <Rectangle3 name="BP" value="Rs 3000"  date="Nov 2, 2023"/>
+          <Rectangle3 name="BP" value="Rs 3000" date="Nov 2, 2023" />
         </View>
         <View style={styles.placeholder}>
-          <Rectangle3 name="Mobil" value="Rs 2500"  date="Nov 5, 2023"/>
+          <Rectangle3 name="Mobil" value="Rs 2500" date="Nov 5, 2023" />
         </View>
-       
+
       </ScrollView>
     </SafeAreaView>
   );
@@ -100,32 +99,32 @@ const styles = StyleSheet.create({
     padding: 0,
     backgroundColor: "#F3F4F6",
     borderRadius: 12,
-    
+
   },
   placeholderText: {
     color: "#6B7280",
     fontSize: 16,
   },
 
- smallCardRow: {
-  flexDirection: "row",
-  justifyContent: "space-between",
-  paddingHorizontal: 20,
-  marginTop: 10,
-},
+  smallCardRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    marginTop: 10,
+  },
 
-Cformgroup: {
-  width: "48%",
-  backgroundColor: "#F3F4F6",
-  borderRadius: 12,
-},
+  Cformgroup: {
+    width: "48%",
+    backgroundColor: "#F3F4F6",
+    borderRadius: 12,
+  },
 
-text4:{
-  fontSize: 22,
-    color: "#074396ff", // text-slate-500
+  text4: {
+    fontSize: 22,
+    color: "#0d7377", // text-slate-500
     lineHeight: 22,
-    marginLeft:20,
+    marginLeft: 20,
 
-}
+  }
 
 });

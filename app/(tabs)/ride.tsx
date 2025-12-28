@@ -34,38 +34,38 @@ if (Platform.OS !== "web") {
 
 const { width, height } = Dimensions.get("window");
 
-// Sample fuel stations data near Hapugala/Karapitiya, Sri Lanka (replace with real API later)
-// Distance in kilometers
-const FUEL_STATIONS = [
-  {
-    id: "1",
-    name: "Shell Gas Station",
-    price: 368.0,
-    latitude: 6.058,
-    longitude: 80.215,
-    distance: 2.5,
-  },
-  {
-    id: "2",
-    name: "Ceylon Petroleum - Karapitiya",
-    price: 365.0,
-    latitude: 6.052,
-    longitude: 80.225,
-    distance: 3.8,
-  },
-  {
-    id: "3",
-    name: "IOC Fuel Station - Dadalla",
-    price: 370.0,
-    latitude: 6.072,
-    longitude: 80.208,
-    distance: 5.2,
-  },
-];
+interface Station {
+  id: string;
+  name: string;
+  price: number;
+  latitude: number;
+  longitude: number;
+  distance: number;
+}
 
-// Get the nearest station (sorted by distance)
-const getNearestStation = () => {
-  return [...FUEL_STATIONS].sort((a, b) => a.distance - b.distance)[0];
+// Calculate distance between two coordinates in km
+const calculateDistance = (
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number
+) => {
+  const R = 6371; // Radius of the earth in km
+  const dLat = deg2rad(lat2 - lat1);
+  const dLon = deg2rad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(deg2rad(lat1)) *
+    Math.cos(deg2rad(lat2)) *
+    Math.sin(dLon / 2) *
+    Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const d = R * c; // Distance in km
+  return parseFloat(d.toFixed(1));
+};
+
+const deg2rad = (deg: number) => {
+  return deg * (Math.PI / 180);
 };
 
 export default function RideScreen() {
@@ -73,8 +73,13 @@ export default function RideScreen() {
     null
   );
   const [loading, setLoading] = useState(true);
+  const [fuelStations, setFuelStations] = useState<Station[]>([]);
+  const [isFetchingStations, setIsFetchingStations] = useState(false);
+
+  const lastFetchLocation = useRef<{ lat: number; lon: number } | null>(null);
+
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedStation, setSelectedStation] = useState(getNearestStation());
+  const [selectedStation, setSelectedStation] = useState<Station | null>(null);
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [searchMarker, setSearchMarker] = useState<{
@@ -91,6 +96,7 @@ export default function RideScreen() {
     distance: string;
     duration: string;
   } | null>(null);
+  // Allow markers to track changes always to fix rendering issues
   const [markersReady, setMarkersReady] = useState(false);
   const mapRef = useRef<any>(null);
 
@@ -102,32 +108,132 @@ export default function RideScreen() {
     longitudeDelta: 0.1,
   };
 
+  // Fetch nearby fuel stations using Overpass API
+  const fetchNearbyStations = async (lat: number, lon: number) => {
+    // Prevent multiple simultaneous fetches if already fetching
+    if (isFetchingStations) return;
+
+    setIsFetchingStations(true);
+    try {
+      // Query for fuel stations within 10km radius (increased from 5km)
+      const query = `
+        [out:json];
+        node(around:10000,${lat},${lon})["amenity"="fuel"];
+        out;
+      `;
+      const response = await fetch(
+        `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(
+          query
+        )}`
+      );
+      const data = await response.json();
+
+      if (data.elements && data.elements.length > 0) {
+        const stations: Station[] = data.elements.map((element: any) => ({
+          id: element.id.toString(),
+          name: element.tags.name || "Fuel Station",
+          // Mock price since API doesn't provide it
+          price: Math.floor(Math.random() * (375 - 365 + 1) + 365),
+          latitude: element.lat,
+          longitude: element.lon,
+          distance: calculateDistance(lat, lon, element.lat, element.lon),
+        }));
+
+        // Sort by distance
+        stations.sort((a, b) => a.distance - b.distance);
+        setFuelStations(stations);
+
+        // Update last fetch location
+        lastFetchLocation.current = { lat, lon };
+
+        // Select nearest station if none selected or if we just loaded
+        if (!selectedStation) {
+          setSelectedStation(stations[0]);
+        }
+      } else {
+        console.log("No fuel stations found in this area via API");
+        // Keep existing stations if any, or clear if we want transparency
+        // setFuelStations([]); 
+      }
+    } catch (error) {
+      console.log("Error fetching stations:", error);
+      Alert.alert("Error", "Could not fetch nearby fuel stations");
+    } finally {
+      setIsFetchingStations(false);
+    }
+  };
+
   useEffect(() => {
+    let locationSubscription: Location.LocationSubscription | null = null;
+
     (async () => {
       try {
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== "granted") {
           setLoading(false);
+          Alert.alert("Permission to access location was denied");
           return;
         }
 
-        const currentLocation = await Location.getCurrentPositionAsync({});
-        setLocation(currentLocation);
+        // Start watching position
+        locationSubscription = await Location.watchPositionAsync(
+          {
+            accuracy: Location.Accuracy.High,
+            timeInterval: 5000, // Update every 5 seconds
+            distanceInterval: 50, // Update every 50 meters
+          },
+          (newLocation) => {
+            setLocation(newLocation);
+            setLoading(false);
+
+            // Check if we need to refetch stations (if moved > 2km from last fetch)
+            const lat = newLocation.coords.latitude;
+            const lon = newLocation.coords.longitude;
+
+            if (!lastFetchLocation.current) {
+              fetchNearbyStations(lat, lon);
+            } else {
+              const dist = calculateDistance(
+                lastFetchLocation.current.lat,
+                lastFetchLocation.current.lon,
+                lat,
+                lon
+              );
+              if (dist > 2.0) {
+                console.log("Moved 2km, refetching stations...");
+                fetchNearbyStations(lat, lon);
+              }
+            }
+          }
+        );
       } catch (error) {
         console.log("Error getting location:", error);
-      } finally {
         setLoading(false);
       }
     })();
+
+    // Cleanup subscription
+    return () => {
+      if (locationSubscription) {
+        locationSubscription.remove();
+      }
+    };
   }, []);
 
-  // Stop marker blinking after initial render
+  // Update selected station when fuelStations updates (to ensure nearest is picked initially)
+  useEffect(() => {
+    if (fuelStations.length > 0 && !selectedStation) {
+      setSelectedStation(fuelStations[0]);
+    }
+  }, [fuelStations]);
+
+  // Stop marker blinking after icons have rendered
   useEffect(() => {
     const timer = setTimeout(() => {
       setMarkersReady(true);
-    }, 2000);
+    }, 1000);
     return () => clearTimeout(timer);
-  }, []);
+  }, [fuelStations]); // Reset if stations change significantly
 
   const centerOnUser = () => {
     if (location && mapRef.current) {
@@ -245,7 +351,7 @@ export default function RideScreen() {
 
   // Open Google Maps with directions to the station
   const openNavigationToStation = async (
-    station: (typeof FUEL_STATIONS)[0]
+    station: Station
   ) => {
     const destination = `${station.latitude},${station.longitude}`;
     const label = encodeURIComponent(station.name);
@@ -280,7 +386,7 @@ export default function RideScreen() {
   };
 
   // Fetch route from OSRM (Open Source Routing Machine) - free, no API key needed
-  const fetchRoute = async (station: (typeof FUEL_STATIONS)[0]) => {
+  const fetchRoute = async (station: Station) => {
     if (!location) {
       Alert.alert(
         "Location Required",
@@ -351,7 +457,7 @@ export default function RideScreen() {
   };
 
   // Show direction from current location to selected station (zoom in map)
-  const showDirectionToStation = (station: (typeof FUEL_STATIONS)[0]) => {
+  const showDirectionToStation = (station: Station) => {
     setSelectedStation(station);
 
     if (!mapRef.current) return;
@@ -411,20 +517,20 @@ export default function RideScreen() {
         initialRegion={
           location
             ? {
-                latitude: location.coords.latitude,
-                longitude: location.coords.longitude,
-                latitudeDelta: 0.05,
-                longitudeDelta: 0.05,
-              }
+              latitude: location.coords.latitude,
+              longitude: location.coords.longitude,
+              latitudeDelta: 0.05,
+              longitudeDelta: 0.05,
+            }
             : defaultRegion
         }
         showsUserLocation
         showsMyLocationButton={false}
       >
         {/* Fuel Station Markers */}
-        {FUEL_STATIONS.map((station) => {
-          const isNearest = station.id === getNearestStation().id;
-          const isSelected = station.id === selectedStation.id;
+        {fuelStations.map((station, index) => {
+          const isNearest = index === 0;
+          const isSelected = selectedStation?.id === station.id;
 
           return (
             <Marker
@@ -435,15 +541,16 @@ export default function RideScreen() {
               }}
               onPress={() => setSelectedStation(station)}
               tracksViewChanges={!markersReady}
+              style={{ zIndex: isNearest ? 10 : 1 }}
             >
-              <View style={styles.customMarker}>
+              <View style={[styles.customMarker, isSelected && { transform: [{ scale: 1.2 }] }]}>
                 <View
                   style={[
                     styles.markerPin,
                     isNearest && styles.nearestMarkerPin,
                   ]}
                 >
-                  <Ionicons name="flame" size={14} color="#fff" />
+                  <Ionicons name="flame" size={18} color="#fff" />
                 </View>
                 <View
                   style={[
@@ -564,73 +671,75 @@ export default function RideScreen() {
       </TouchableOpacity>
 
       {/* Station Info Card */}
-      <View style={styles.stationCard}>
-        <TouchableOpacity
-          style={styles.stationInfo}
-          onPress={() => showDirectionToStation(selectedStation)}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.stationLabel}>
-            {showingDirections ? "Directions to" : "Nearest Fuel Station"}
-          </Text>
-          <Text style={styles.stationName}>{selectedStation.name}</Text>
-          <View style={styles.stationDetails}>
-            <View style={styles.distanceContainer}>
-              <Ionicons name="navigate" size={16} color={Colors.primary} />
-              <Text style={styles.stationDistance}>
-                {routeInfo
-                  ? routeInfo.distance
-                  : `${selectedStation.distance} km`}
-              </Text>
-            </View>
-            {routeInfo ? (
+      {selectedStation && (
+        <View style={styles.stationCard}>
+          <TouchableOpacity
+            style={styles.stationInfo}
+            onPress={() => showDirectionToStation(selectedStation)}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.stationLabel}>
+              {showingDirections ? "Directions to" : "Nearest Fuel Station"}
+            </Text>
+            <Text style={styles.stationName}>{selectedStation.name}</Text>
+            <View style={styles.stationDetails}>
               <View style={styles.distanceContainer}>
-                <Ionicons name="time" size={16} color={Colors.secondary} />
-                <Text style={styles.stationDuration}>{routeInfo.duration}</Text>
+                <Ionicons name="navigate" size={16} color={Colors.primary} />
+                <Text style={styles.stationDistance}>
+                  {routeInfo
+                    ? routeInfo.distance
+                    : `${selectedStation.distance} km`}
+                </Text>
               </View>
+              {routeInfo ? (
+                <View style={styles.distanceContainer}>
+                  <Ionicons name="time" size={16} color={Colors.secondary} />
+                  <Text style={styles.stationDuration}>{routeInfo.duration}</Text>
+                </View>
+              ) : (
+                <Text style={styles.stationPrice}>
+                  Rs. {selectedStation.price.toFixed(0)}/L
+                </Text>
+              )}
+            </View>
+          </TouchableOpacity>
+
+          {/* Action Buttons */}
+          <View style={styles.buttonRow}>
+            {showingDirections ? (
+              /* Close Directions Button */
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={clearDirections}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="close" size={20} color={Colors.text} />
+                <Text style={styles.closeButtonText}>Close</Text>
+              </TouchableOpacity>
             ) : (
-              <Text style={styles.stationPrice}>
-                Rs. {selectedStation.price.toFixed(0)}/L
-              </Text>
+              /* Show Directions Button */
+              <TouchableOpacity
+                style={styles.navigateButton}
+                onPress={() => fetchRoute(selectedStation)}
+                activeOpacity={0.8}
+              >
+                {isSearching ? (
+                  <ActivityIndicator size="small" color={Colors.white} />
+                ) : (
+                  <>
+                    <Ionicons
+                      name="navigate-circle"
+                      size={20}
+                      color={Colors.white}
+                    />
+                    <Text style={styles.navigateButtonText}>Show Directions</Text>
+                  </>
+                )}
+              </TouchableOpacity>
             )}
           </View>
-        </TouchableOpacity>
-
-        {/* Action Buttons */}
-        <View style={styles.buttonRow}>
-          {showingDirections ? (
-            /* Close Directions Button */
-            <TouchableOpacity
-              style={styles.closeButton}
-              onPress={clearDirections}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="close" size={20} color={Colors.text} />
-              <Text style={styles.closeButtonText}>Close</Text>
-            </TouchableOpacity>
-          ) : (
-            /* Show Directions Button */
-            <TouchableOpacity
-              style={styles.navigateButton}
-              onPress={() => fetchRoute(selectedStation)}
-              activeOpacity={0.8}
-            >
-              {isSearching ? (
-                <ActivityIndicator size="small" color={Colors.white} />
-              ) : (
-                <>
-                  <Ionicons
-                    name="navigate-circle"
-                    size={20}
-                    color={Colors.white}
-                  />
-                  <Text style={styles.navigateButtonText}>Show Directions</Text>
-                </>
-              )}
-            </TouchableOpacity>
-          )}
         </View>
-      </View>
+      )}
     </View>
   );
 }
@@ -900,16 +1009,22 @@ const styles = StyleSheet.create({
   },
   customMarker: {
     alignItems: "center",
+    justifyContent: "center",
   },
   markerPin: {
     backgroundColor: "#F5A623",
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 2,
     borderColor: "#fff",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   nearestMarkerPin: {
     backgroundColor: "#0D7377",
@@ -923,7 +1038,12 @@ const styles = StyleSheet.create({
     borderLeftColor: "transparent",
     borderRightColor: "transparent",
     borderTopColor: "#F5A623",
-    marginTop: -2,
+    marginTop: -3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   nearestMarkerTip: {
     borderTopColor: "#0D7377",
