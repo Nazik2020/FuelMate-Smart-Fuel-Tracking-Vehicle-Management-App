@@ -1,45 +1,45 @@
 import React from "react";
-import { View, Text,StyleSheet } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 
-interface prop{
+interface prop {
 
-    name:string,
-    value:string,
-    date:String,
-    
+  name: string,
+  value: string,
+  date: String,
+
 
 }
 
-const Rectangle3: React.FC<prop>=({name,value,date})=> {
+const Rectangle3: React.FC<prop> = ({ name, value, date }) => {
 
-    return (
+  return (
 
-        <View style = {styles.cardR2}>
+    <View style={styles.cardR2}>
 
-            <View style={styles.inner}>
+      <View style={styles.inner}>
 
-                <Text style={styles.text}>{name}</Text>
-                <Text style={styles.text2}>{value}</Text>
+        <Text style={styles.text}>{name}</Text>
+        <Text style={styles.text2}>{value}</Text>
 
-            </View>
+      </View>
 
-            <View style={styles.inner2}>
+      <View style={styles.inner2}>
 
-                <Text style={styles.text}>{date}</Text>
-                
-
-            </View>
-
-        </View>
+        <Text style={styles.textDate}>{date}</Text>
 
 
-    );
+      </View>
+
+    </View>
+
+
+  );
 
 }
 
 const styles = StyleSheet.create({
 
-    cardR1: {
+  cardR1: {
     backgroundColor: "#ffffff", // bg-white
     borderRadius: 12,           // rounded
     overflow: "hidden",
@@ -49,9 +49,9 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 4, // Android shadow
     //marginVertical: 10,
-    
+
   },
-    cardR2: {
+  cardR2: {
     backgroundColor: "#ffffff", // bg-white
     borderRadius: 12,           // rounded
     overflow: "hidden",
@@ -61,31 +61,41 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 4, // Android shadow
     //marginVertical: 10,
-     flexDirection: "row",
-     justifyContent: "space-between",
-    
+    flexDirection: "row",
+    justifyContent: "space-between",
+
   },
 
   inner: {
     padding: 14, // p-6
   },
 
-  inner2:{
-    
-     padding: 14,
+  inner2: {
+
+    padding: 14,
   },
-  
+
   text: {
-    fontSize: 15,
-    color: "#074396ff", // text-slate-500
+    fontSize: 16,
+    color: "#0D7377", // Green for Station Name
+    fontWeight: "600",
     lineHeight: 22,
-    margin:2,
+    margin: 2,
   },
 
   text2: {
-    fontSize: 20,
-    color: "#074396ff", // text-slate-500
+    fontSize: 18,
+    color: "#0D7377", // Green for Price
+    fontWeight: "bold",
     lineHeight: 22,
+  },
+
+  textDate: {
+    fontSize: 14,
+    color: "#9CA3AF", // Ash/Gray for Date
+    lineHeight: 22,
+    margin: 2,
+    textAlign: "right",
   },
 
 });
