@@ -9,6 +9,10 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "@/constants/theme";
+import CardMSpend from "@/components/DashBoard Components/CardMSpend";
+import Rectangle2 from "@/components/DashBoard Components/Rectangle2";
+import CardMExpense from "@/components/DashBoard Components/CardMExpense";
+import Rectangle3 from "@/components/DashBoard Components/Rectangle3";
 
 export default function HomeScreen() {
   return (
@@ -27,10 +31,34 @@ export default function HomeScreen() {
 
         {/* Placeholder content - Vindya will build this */}
         <View style={styles.placeholder}>
-          <Text style={styles.placeholderText}>
-            Dashboard content coming soon...
-          </Text>
+        <CardMSpend></CardMSpend>
         </View>
+
+        <View style={styles.smallCardRow}>
+          <View style={styles.Cformgroup} >
+        <Rectangle2 title = "Average Efficiency"  value="32.5 MPG"/>
+        </View>
+        <View style={styles.Cformgroup}>
+          <Rectangle2 title="Last Fill" value="3 days ago"></Rectangle2>
+        </View>
+        </View>
+
+        <View style={styles.placeholder}>
+        <CardMExpense/> 
+        </View>
+        <View>
+          <Text style={styles.text4}>Recent Fuel Logs</Text>
+        </View>
+        <View style={styles.placeholder}>
+          <Rectangle3 name="Shell Station" value="Rs 4000"  date="Oct 28, 2023"/>
+        </View>
+        <View style={styles.placeholder}>
+          <Rectangle3 name="BP" value="Rs 3000"  date="Nov 2, 2023"/>
+        </View>
+        <View style={styles.placeholder}>
+          <Rectangle3 name="Mobil" value="Rs 2500"  date="Nov 5, 2023"/>
+        </View>
+       
       </ScrollView>
     </SafeAreaView>
   );
@@ -68,14 +96,36 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   placeholder: {
-    margin: 20,
-    padding: 40,
+    margin: 10,
+    padding: 0,
     backgroundColor: "#F3F4F6",
     borderRadius: 12,
-    alignItems: "center",
+    
   },
   placeholderText: {
     color: "#6B7280",
     fontSize: 16,
   },
+
+ smallCardRow: {
+  flexDirection: "row",
+  justifyContent: "space-between",
+  paddingHorizontal: 20,
+  marginTop: 10,
+},
+
+Cformgroup: {
+  width: "48%",
+  backgroundColor: "#F3F4F6",
+  borderRadius: 12,
+},
+
+text4:{
+  fontSize: 22,
+    color: "#074396ff", // text-slate-500
+    lineHeight: 22,
+    marginLeft:20,
+
+}
+
 });
