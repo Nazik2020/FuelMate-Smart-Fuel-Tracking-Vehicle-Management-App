@@ -1,4 +1,4 @@
-// VINDYA - Home/Dashboard Screen
+import React, { useEffect, useState } from "react";
 import CardMExpense from "@/components/DashBoard Components/CardMExpense";
 import CardMSpend from "@/components/DashBoard Components/CardMSpend";
 import Rectangle2 from "@/components/DashBoard Components/Rectangle2";
@@ -12,8 +12,27 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { getFuelLogs, getBarChartData } from "@/config/HomeDashboard";
 
 export default function HomeScreen() {
+  const [fuelLogs, setFuelLogs] = useState<
+    { userId: string; fuelStation: string; date: string; totalCost: number }[]
+  >([]);
+  const [chartData, setChartData] = useState<{ label: string; value: number }[]>(
+    []
+  );
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const logs = await getFuelLogs();
+      setFuelLogs(logs);
+
+      const bData = await getBarChartData();
+      setChartData(bData);
+    };
+    fetchData();
+  }, []);
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -28,41 +47,44 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Placeholder content - Vindya will build this */}
+        {/* Placeholder content */}
         <View style={styles.placeholder}>
-          <CardMSpend></CardMSpend>
+          <CardMSpend />
         </View>
 
         <View style={styles.smallCardRow}>
-          <View style={styles.Cformgroup} >
+          <View style={styles.Cformgroup}>
             <Rectangle2 title="Average Efficiency" value="32.5 MPG" />
           </View>
           <View style={styles.Cformgroup}>
-            <Rectangle2 title="Last Fill" value="3 days ago"></Rectangle2>
+            <Rectangle2 title="Last Fill" value="3 days ago" />
           </View>
         </View>
 
+        {/* Monthly Expense BarChart */}
         <View style={styles.placeholder}>
-          <CardMExpense />
+          <CardMExpense data={chartData} />
         </View>
+
+        {/* Recent Fuel Logs */}
         <View>
           <Text style={styles.text4}>Recent Fuel Logs</Text>
         </View>
-        <View style={styles.placeholder}>
-          <Rectangle3 name="Shell Station" value="Rs 4000" date="Oct 28, 2023" />
-        </View>
-        <View style={styles.placeholder}>
-          <Rectangle3 name="BP" value="Rs 3000" date="Nov 2, 2023" />
-        </View>
-        <View style={styles.placeholder}>
-          <Rectangle3 name="Mobil" value="Rs 2500" date="Nov 5, 2023" />
-        </View>
-
+        {fuelLogs.map((log) => (
+          <View style={styles.placeholder} key={log.userId}>
+            <Rectangle3
+              name={log.fuelStation}
+              value={`Rs ${log.totalCost}`}
+              date={log.date}
+            />
+          </View>
+        ))}
       </ScrollView>
     </SafeAreaView>
   );
 }
 
+// ===== Styles =====
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -99,32 +121,26 @@ const styles = StyleSheet.create({
     padding: 0,
     backgroundColor: "#F3F4F6",
     borderRadius: 12,
-
   },
   placeholderText: {
     color: "#6B7280",
     fontSize: 16,
   },
-
   smallCardRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     paddingHorizontal: 20,
     marginTop: 10,
   },
-
   Cformgroup: {
     width: "48%",
     backgroundColor: "#F3F4F6",
     borderRadius: 12,
   },
-
   text4: {
     fontSize: 22,
-    color: "#0d7377", // text-slate-500
+    color: "#0d7377",
     lineHeight: 22,
     marginLeft: 20,
-
-  }
-
+  },
 });
