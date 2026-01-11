@@ -26,7 +26,7 @@ export default function CardMSpend() {
 const styles = StyleSheet.create({
 
   cardS: {
-    backgroundColor: "#ffffff", // bg-white
+    backgroundColor: "#E6F7F8", // Light teal background
     borderRadius: 12,           // rounded
     overflow: "hidden",
     shadowColor: "#000",        // shadow
@@ -43,18 +43,18 @@ const styles = StyleSheet.create({
   },
 
   text: {
-    fontSize: 15,
-    color: "#9CA3AF", // Ash/Gray for secondary text
-    lineHeight: 22,
-    margin: 5,
+    fontSize: 14,
+    color: "#4B5563", // Dark grey for label
+    lineHeight: 20,
+    marginBottom: 8,
   },
 
   text2: {
-    fontSize: 34,
-    color: "#0D7377", // Green for primary amount
+    fontSize: 32,
+    color: "#0D7377", // Teal for primary amount
     fontWeight: "bold",
-    lineHeight: 40,
-    marginBottom: 5,
+    lineHeight: 38,
+    marginBottom: 6,
   },
 
 });

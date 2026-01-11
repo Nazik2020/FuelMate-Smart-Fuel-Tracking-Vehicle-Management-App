@@ -1,10 +1,30 @@
-import { Tabs } from "expo-router";
+import { Tabs, useRouter } from "expo-router";
 import React from "react";
 import { Ionicons } from "@expo/vector-icons";
-import { Platform } from "react-native";
+import { Platform, TouchableOpacity, View, StyleSheet } from "react-native";
 
 import { HapticTab } from "@/components/haptic-tab";
 import { Colors } from "@/constants/theme";
+import { BottomTabBarButtonProps } from "@react-navigation/bottom-tabs";
+
+function AddButton(props: BottomTabBarButtonProps) {
+  const router = useRouter();
+
+  return (
+    <View style={styles.addButtonContainer} pointerEvents="box-none">
+      <TouchableOpacity
+        style={styles.addButton}
+        onPress={() => {
+          // Navigate to logs page to add new fuel entry
+          router.push("/(tabs)/logs");
+        }}
+        activeOpacity={0.8}
+      >
+        <Ionicons name="add" size={24} color="#FFFFFF" />
+      </TouchableOpacity>
+    </View>
+  );
+}
 
 export default function TabLayout() {
   return (
@@ -55,6 +75,14 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="add"
+        options={{
+          title: "",
+          tabBarButton: (props) => <AddButton {...props} />,
+          tabBarIcon: () => null,
+        }}
+      />
+      <Tabs.Screen
         name="ride"
         options={{
           title: "Ride",
@@ -83,3 +111,25 @@ export default function TabLayout() {
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  addButtonContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  addButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: Colors.primary,
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: -15,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+});
