@@ -1,7 +1,7 @@
-import React from "react";
-import { View, StyleSheet, TouchableOpacity, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import React from "react";
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 interface MenuItem {
   name: string;
@@ -37,37 +37,67 @@ export default function DrawerMenuItems({
     }
   };
 
+  const handleLogout = () => {
+    Alert.alert("Logout", "Are you sure you want to logout?", [
+      {
+        text: "Cancel",
+        style: "cancel",
+      },
+      {
+        text: "Logout",
+        style: "destructive",
+        onPress: () => {
+          // TODO: Add actual logout logic (clear auth state, tokens, etc.)
+          onItemPress?.();
+          router.replace("/(auth)/login" as any);
+        },
+      },
+    ]);
+  };
+
   return (
-    <View style={styles.menuItems}>
-      {menuItems.map((item, index) => {
-        const isActive = item.route === activeRoute;
-        return (
-          <TouchableOpacity
-            key={index}
-            style={[styles.menuItem, isActive && styles.activeMenuItem]}
-            onPress={() => handleMenuPress(item.route)}
-          >
-            <Ionicons
-              name={item.icon as any}
-              size={24}
-              color={isActive ? "#FFFFFF" : "#1F2937"}
-            />
-            <Text
-              style={[
-                styles.menuItemText,
-                isActive && styles.activeMenuItemText,
-              ]}
+    <View style={styles.container}>
+      <View style={styles.menuItems}>
+        {menuItems.map((item, index) => {
+          const isActive = item.route === activeRoute;
+          return (
+            <TouchableOpacity
+              key={index}
+              style={[styles.menuItem, isActive && styles.activeMenuItem]}
+              onPress={() => handleMenuPress(item.route)}
             >
-              {item.name}
-            </Text>
-          </TouchableOpacity>
-        );
-      })}
+              <Ionicons
+                name={item.icon as any}
+                size={24}
+                color={isActive ? "#FFFFFF" : "#1F2937"}
+              />
+              <Text
+                style={[
+                  styles.menuItemText,
+                  isActive && styles.activeMenuItemText,
+                ]}
+              >
+                {item.name}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
+      {/* Logout Button */}
+      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+        <Ionicons name="log-out-outline" size={24} color="#EF4444" />
+        <Text style={styles.logoutText}>Logout</Text>
+      </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: "space-between",
+  },
   menuItems: {
     paddingVertical: 20,
   },
@@ -93,5 +123,17 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontWeight: "600",
   },
+  logoutButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 30,
+    paddingVertical: 20,
+    marginBottom: 30,
+  },
+  logoutText: {
+    fontSize: 16,
+    color: "#EF4444",
+    marginLeft: 15,
+    fontWeight: "500",
+  },
 });
-

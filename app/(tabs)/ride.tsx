@@ -1,4 +1,12 @@
 // NAZIK - Map/Ride Screen - Find Fuel Stations
+import DrawerMenu from "@/components/DrawerMenu";
+import {
+  MapView,
+  Marker,
+  Polyline,
+  PROVIDER_GOOGLE,
+  WebMapFallback,
+} from "@/components/Map";
 import { Colors } from "@/constants/theme";
 import { Ionicons } from "@expo/vector-icons";
 import * as Location from "expo-location";
@@ -17,20 +25,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-
-// Only import react-native-maps on native platforms
-let MapView: any;
-let Marker: any;
-let Polyline: any;
-let PROVIDER_GOOGLE: any;
-
-if (Platform.OS !== "web") {
-  const Maps = require("react-native-maps");
-  MapView = Maps.default;
-  Marker = Maps.Marker;
-  Polyline = Maps.Polyline;
-  PROVIDER_GOOGLE = Maps.PROVIDER_GOOGLE;
-}
 
 const { width, height } = Dimensions.get("window");
 
@@ -56,9 +50,9 @@ const calculateDistance = (
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos(deg2rad(lat1)) *
-    Math.cos(deg2rad(lat2)) *
-    Math.sin(dLon / 2) *
-    Math.sin(dLon / 2);
+      Math.cos(deg2rad(lat2)) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   const d = R * c; // Distance in km
   return parseFloat(d.toFixed(1));
@@ -69,6 +63,7 @@ const deg2rad = (deg: number) => {
 };
 
 export default function RideScreen() {
+  const [drawerVisible, setDrawerVisible] = useState(false);
   const [location, setLocation] = useState<Location.LocationObject | null>(
     null
   );
@@ -153,7 +148,7 @@ export default function RideScreen() {
       } else {
         console.log("No fuel stations found in this area via API");
         // Keep existing stations if any, or clear if we want transparency
-        // setFuelStations([]); 
+        // setFuelStations([]);
       }
     } catch (error) {
       console.log("Error fetching stations:", error);
@@ -350,9 +345,7 @@ export default function RideScreen() {
   }, [searchQuery]);
 
   // Open Google Maps with directions to the station
-  const openNavigationToStation = async (
-    station: Station
-  ) => {
+  const openNavigationToStation = async (station: Station) => {
     const destination = `${station.latitude},${station.longitude}`;
     const label = encodeURIComponent(station.name);
 
@@ -481,21 +474,8 @@ export default function RideScreen() {
   };
 
   // Web fallback - show message instead of map
-  if (Platform.OS === "web") {
-    return (
-      <View style={styles.container}>
-        <View style={styles.webFallback}>
-          <Ionicons name="map-outline" size={64} color={Colors.primary} />
-          <Text style={styles.webFallbackTitle}>Map View</Text>
-          <Text style={styles.webFallbackText}>
-            Maps are only available on mobile devices.
-          </Text>
-          <Text style={styles.webFallbackText}>
-            Please use the Expo Go app on your phone to view the map.
-          </Text>
-        </View>
-      </View>
-    );
+  if (Platform.OS === "web" || !MapView) {
+    return <WebMapFallback />;
   }
 
   if (loading) {
@@ -517,11 +497,11 @@ export default function RideScreen() {
         initialRegion={
           location
             ? {
-              latitude: location.coords.latitude,
-              longitude: location.coords.longitude,
-              latitudeDelta: 0.05,
-              longitudeDelta: 0.05,
-            }
+                latitude: location.coords.latitude,
+                longitude: location.coords.longitude,
+                latitudeDelta: 0.05,
+                longitudeDelta: 0.05,
+              }
             : defaultRegion
         }
         showsUserLocation
@@ -543,7 +523,12 @@ export default function RideScreen() {
               tracksViewChanges={!markersReady}
               style={{ zIndex: isNearest ? 10 : 1 }}
             >
-              <View style={[styles.customMarker, isSelected && { transform: [{ scale: 1.2 }] }]}>
+              <View
+                style={[
+                  styles.customMarker,
+                  isSelected && { transform: [{ scale: 1.2 }] },
+                ]}
+              >
                 <View
                   style={[
                     styles.markerPin,
@@ -592,6 +577,14 @@ export default function RideScreen() {
           />
         )}
       </MapView>
+
+      {/* Menu Button */}
+      <TouchableOpacity
+        style={styles.menuButton}
+        onPress={() => setDrawerVisible(true)}
+      >
+        <Ionicons name="menu-outline" size={24} color={Colors.text} />
+      </TouchableOpacity>
 
       {/* Search Bar */}
       <View style={styles.searchContainer}>
@@ -694,7 +687,9 @@ export default function RideScreen() {
               {routeInfo ? (
                 <View style={styles.distanceContainer}>
                   <Ionicons name="time" size={16} color={Colors.secondary} />
-                  <Text style={styles.stationDuration}>{routeInfo.duration}</Text>
+                  <Text style={styles.stationDuration}>
+                    {routeInfo.duration}
+                  </Text>
                 </View>
               ) : (
                 <Text style={styles.stationPrice}>
@@ -732,7 +727,9 @@ export default function RideScreen() {
                       size={20}
                       color={Colors.white}
                     />
-                    <Text style={styles.navigateButtonText}>Show Directions</Text>
+                    <Text style={styles.navigateButtonText}>
+                      Show Directions
+                    </Text>
                   </>
                 )}
               </TouchableOpacity>
@@ -740,6 +737,12 @@ export default function RideScreen() {
           </View>
         </View>
       )}
+
+      {/* Drawer Menu */}
+      <DrawerMenu
+        visible={drawerVisible}
+        onClose={() => setDrawerVisible(false)}
+      />
     </View>
   );
 }
@@ -747,6 +750,23 @@ export default function RideScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  menuButton: {
+    position: "absolute",
+    top: Platform.OS === "ios" ? 60 : 40,
+    left: 16,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: Colors.white,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    zIndex: 10,
   },
   loadingContainer: {
     flex: 1,
@@ -766,7 +786,7 @@ const styles = StyleSheet.create({
   searchContainer: {
     position: "absolute",
     top: Platform.OS === "ios" ? 60 : 40,
-    left: 16,
+    left: 70,
     right: 16,
   },
   searchBar: {
