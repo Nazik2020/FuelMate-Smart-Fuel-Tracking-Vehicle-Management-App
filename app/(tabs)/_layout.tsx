@@ -1,7 +1,7 @@
+import { Ionicons } from "@expo/vector-icons";
 import { Tabs, useRouter } from "expo-router";
 import React from "react";
-import { Ionicons } from "@expo/vector-icons";
-import { Platform, TouchableOpacity, View, StyleSheet } from "react-native";
+import { Platform, StyleSheet, TouchableOpacity, View } from "react-native";
 
 import { HapticTab } from "@/components/haptic-tab";
 import { Colors } from "@/constants/theme";
@@ -15,8 +15,8 @@ function AddButton(props: BottomTabBarButtonProps) {
       <TouchableOpacity
         style={styles.addButton}
         onPress={() => {
-          // Navigate to logs page to add new fuel entry
-          router.push("/(tabs)/logs");
+          // Navigate to add new task page
+          router.push("/(tabs)/add_new_task");
         }}
         activeOpacity={0.8}
       >
@@ -106,6 +106,13 @@ export default function TabLayout() {
               color={color}
             />
           ),
+        }}
+      />
+      <Tabs.Screen
+        name="add_new_task"
+        options={{
+          href: null, // Hide from tab bar
+          headerShown: false,
         }}
       />
     </Tabs>
