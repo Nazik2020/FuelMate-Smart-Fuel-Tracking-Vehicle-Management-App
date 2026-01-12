@@ -1,7 +1,9 @@
-// app/login.tsx
+
 import { AntDesign, MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { Link } from "expo-router";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { doc, serverTimestamp, setDoc } from "firebase/firestore";
+import { useState } from "react";
 import {
   Dimensions,
   Image,
@@ -12,6 +14,8 @@ import {
   View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { auth, db } from "../firebase/firebaseConfig";
+
 
 
 
@@ -22,8 +26,51 @@ export const options = {
   headerShown: false,
 };
 
-export default function LoginPage() {
-  //const router = useRouter();
+export default function signuppage() {
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  const handleSignup = async () => {
+  if (!email || !password || !confirmPassword) {
+    alert("Please fill all fields");
+    return;
+  }
+
+  if (password !== confirmPassword) {
+    alert("Passwords do not match");
+    return;
+  }
+
+  try {
+    // 1. Create user in Firebase Auth
+    const userCredential = await createUserWithEmailAndPassword(
+      auth,
+      email,
+      password
+    );
+
+    const user = userCredential.user;
+
+    // 2. Store user data in Firestore
+    await setDoc(doc(db, "users", user.uid), {
+      email: user.email,
+      role: "user",
+      createdAt: serverTimestamp(),
+      notificationsEnabled: true,
+      darkMode: false,
+    });
+
+    alert("Signup successful!");
+
+  } catch (error) {
+    alert(error.message);
+  }
+};
+
+
+
   return (
     <LinearGradient
       colors={["#0C9396", "#E4D7A4"]}
@@ -40,11 +87,11 @@ export default function LoginPage() {
         />
 
         {/* Title */}
-        <Text style={styles.title}>Welcome Back</Text>
+        <Text style={styles.title}>Welcome to fuel mate</Text>
 
         {/* Subtitle */}
         <Text style={styles.subtitle}>
-          Sign in to your account to continue tracking your fuel expenses
+          Sign up to continue tracking your fuel expenses
         </Text>
 
         {/* Form */}
@@ -64,6 +111,8 @@ export default function LoginPage() {
               style={styles.input}
               keyboardType="email-address"
               autoCapitalize="none"
+              value={email}
+              onChangeText={setEmail}
             />
           </View>
 
@@ -77,15 +126,31 @@ export default function LoginPage() {
               secureTextEntry
               style={styles.input}
               autoCapitalize="none"
+              value={password}
+              onChangeText={setPassword}
             />
           </View>
-          <Text style={styles.label1}>Forgot Password?</Text>
+
+          <Text style={styles.label}>Re Enter Password</Text>
+          <View style={styles.inputBox}>
+            <MaterialIcons name="lock" size={22} color="#9a9696ff" />
+            <TextInput
+              placeholder="Enter your password"
+              placeholderTextColor="#83888B"
+              secureTextEntry
+              style={styles.input}
+              autoCapitalize="none"
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+            />
+          </View>
+
 
 
 
         </View>
-        <TouchableOpacity style={styles.signinbutton}>
-          <Text style={styles.signinbuttontext}>sign In</Text>
+        <TouchableOpacity style={styles.signupbutton} onPress={handleSignup}>
+          <Text style={styles.signupbuttontext}>Sign Up</Text>
         </TouchableOpacity>
 
 
@@ -95,27 +160,10 @@ export default function LoginPage() {
           <View style={styles.line} />
         </View>
 
-        <TouchableOpacity style={styles.signinwithgooglebutton}>
+        <TouchableOpacity style={styles.signupwithgooglebutton}>
           <AntDesign name="google" size={24} />
-          <Text style={styles.signinwithgooglebuttontext}>Sign in with Google</Text>
+          <Text style={styles.signupwithgooglebuttontext}>Sign up with Google</Text>
         </TouchableOpacity>
-
-        <View style={styles.signupcontainer}>
-          <Text style={styles.donttext}>
-            Don’t have an account?{" "}
-            <Link href="/signuppage" asChild>
-              <Text style={{ color: "#ffffffff", fontWeight: "600" }}>
-                Sign up
-              </Text>
-            </Link>
-          </Text>
-        </View>
-
-
-
-
-
-
 
       </SafeAreaView>
     </LinearGradient>
@@ -189,7 +237,7 @@ const styles = StyleSheet.create({
     width: "90%",
 
   },
-  signinbutton: {
+  signupbutton: {
     width: "100%",
     height: 50,
     backgroundColor: "#005F73",
@@ -199,7 +247,7 @@ const styles = StyleSheet.create({
     marginTop: 30,
   },
 
-  signinwithgooglebutton: {
+  signupwithgooglebutton: {
     width: "100%",
     height: 50,
     backgroundColor: "#ffffffff",
@@ -210,13 +258,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
   },
 
-  signinbuttontext: {
+  signupbuttontext: {
     color: "#fff",
     fontSize: 18,
     fontWeight: "600",
   },
 
-  signinwithgooglebuttontext: {
+  signupwithgooglebuttontext: {
     color: "#000000ff",
     fontSize: 16,
     fontWeight: "600",
