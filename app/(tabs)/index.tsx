@@ -3,7 +3,9 @@ import CardMExpense from "@/components/DashBoard Components/CardMExpense";
 import CardMSpend from "@/components/DashBoard Components/CardMSpend";
 import Rectangle2 from "@/components/DashBoard Components/Rectangle2";
 import Rectangle3 from "@/components/DashBoard Components/Rectangle3";
+import DrawerMenu from "@/components/DrawerMenu";
 import { Ionicons } from "@expo/vector-icons";
+import { useState } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -38,9 +40,17 @@ export default function HomeScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
-          <View>
-            <Text style={styles.title}>Dashboard</Text>
-            <Text style={styles.subtitle}>Welcome, Alex</Text>
+          <View style={styles.headerLeft}>
+            <TouchableOpacity
+              style={styles.menuButton}
+              onPress={() => setDrawerVisible(true)}
+            >
+              <Ionicons name="menu-outline" size={24} color="#1F2937" />
+            </TouchableOpacity>
+            <View>
+              <Text style={styles.title}>Dashboard</Text>
+              <Text style={styles.subtitle}>Welcome, Alex</Text>
+            </View>
           </View>
           <TouchableOpacity style={styles.profileButton}>
             <Ionicons name="person-outline" size={24} color="#1F2937" />
@@ -80,6 +90,10 @@ export default function HomeScreen() {
           </View>
         ))}
       </ScrollView>
+      <DrawerMenu
+        visible={drawerVisible}
+        onClose={() => setDrawerVisible(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -97,6 +111,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 10,
     paddingBottom: 20,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  menuButton: {
+    marginRight: 12,
+    padding: 4,
   },
   title: {
     fontSize: 28,
@@ -139,8 +162,17 @@ const styles = StyleSheet.create({
   },
   text4: {
     fontSize: 22,
-    color: "#0d7377",
+    color: "#0d7377", // Green color for title
+    fontWeight: "600",
     lineHeight: 22,
     marginLeft: 20,
+    marginTop: 10,
+    marginBottom: 10,
   },
+
+  fuelLogContainer: {
+    marginHorizontal: 20,
+    marginBottom: 10,
+  },
+
 });
