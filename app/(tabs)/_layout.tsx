@@ -1,10 +1,30 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Tabs } from "expo-router";
+import { Tabs, useRouter } from "expo-router";
 import React from "react";
-import { Platform } from "react-native";
+import { Platform, StyleSheet, TouchableOpacity, View } from "react-native";
 
 import { HapticTab } from "@/components/haptic-tab";
 import { Colors } from "@/constants/theme";
+import { BottomTabBarButtonProps } from "@react-navigation/bottom-tabs";
+
+function AddButton(props: BottomTabBarButtonProps) {
+  const router = useRouter();
+
+  return (
+    <View style={styles.addButtonContainer} pointerEvents="box-none">
+      <TouchableOpacity
+        style={styles.addButton}
+        onPress={() => {
+          // Navigate to add new task page
+          router.push("/(tabs)/add_new_task");
+        }}
+        activeOpacity={0.8}
+      >
+        <Ionicons name="add" size={24} color="#FFFFFF" />
+      </TouchableOpacity>
+    </View>
+  );
+}
 
 export default function TabLayout() {
   return (
@@ -55,6 +75,14 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="add"
+        options={{
+          title: "",
+          tabBarButton: (props) => <AddButton {...props} />,
+          tabBarIcon: () => null,
+        }}
+      />
+      <Tabs.Screen
         name="ride"
         options={{
           title: "Ride",
@@ -80,6 +108,35 @@ export default function TabLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="add_new_task"
+        options={{
+          href: null, // Hide from tab bar
+          headerShown: false,
+        }}
+      />
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  addButtonContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  addButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: Colors.primary,
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: -15,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+});
