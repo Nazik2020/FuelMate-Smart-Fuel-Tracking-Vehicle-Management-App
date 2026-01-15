@@ -1,6 +1,6 @@
-import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import React from "react";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 interface DrawerHeaderProps {
   onClose: () => void;
@@ -12,22 +12,13 @@ export default function DrawerHeader({ onClose }: DrawerHeaderProps) {
       <TouchableOpacity style={styles.closeButton} onPress={onClose}>
         <Ionicons name="close" size={24} color="#FFFFFF" />
       </TouchableOpacity>
-      
+
       <View style={styles.profileSection}>
         <View style={styles.profileIcon}>
           <Ionicons name="person" size={40} color="#0D7377" />
         </View>
         <Text style={styles.profileName}>Alex Johnson</Text>
         <Text style={styles.profileEmail}>alex@email.com</Text>
-      </View>
-
-      {/* Vehicle Card */}
-      <View style={styles.vehicleCard}>
-        <Ionicons name="car-outline" size={24} color="#FFFFFF" />
-        <View style={styles.vehicleInfo}>
-          <Text style={styles.vehicleName}>Toyota Corolla</Text>
-          <Text style={styles.vehiclePlate}>WP ABC-1234</Text>
-        </View>
       </View>
     </View>
   );
@@ -42,7 +33,7 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     alignSelf: "flex-end",
-    marginBottom: 20,
+    marginBottom: 10,
   },
   profileSection: {
     alignItems: "center",
@@ -90,4 +81,3 @@ const styles = StyleSheet.create({
     color: "#E6F7F8",
   },
 });
-

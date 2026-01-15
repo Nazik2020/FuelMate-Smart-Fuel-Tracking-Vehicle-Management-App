@@ -17,7 +17,7 @@ interface DrawerMenuItemsProps {
 const menuItems: MenuItem[] = [
   { name: "Home", icon: "home", route: "/(tabs)" },
   { name: "Profile", icon: "person-outline", route: null },
-  { name: "Logs", icon: "document-text-outline", route: "/(tabs)/logs" },
+  { name: "Logs", icon: "speedometer-outline", route: "/(tabs)/logs" }, // Updated per instructions
   { name: "Ride", icon: "map-outline", route: "/(tabs)/ride" },
   { name: "Notifications", icon: "notifications-outline", route: null },
   { name: "Contact Us", icon: "call-outline", route: null },
@@ -126,9 +126,11 @@ const styles = StyleSheet.create({
   logoutButton: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 30,
-    paddingVertical: 20,
-    marginBottom: 30,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    marginHorizontal: 10,
+    borderTopWidth: 1,
+    borderTopColor: "#E5E7EB",
   },
   logoutText: {
     fontSize: 16,

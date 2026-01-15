@@ -1,0 +1,17 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Allow authenticated users (including anonymous) to read fuel logs
+    match /fuelLogs/{document=**} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+    
+    // Add more collection rules as needed
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
