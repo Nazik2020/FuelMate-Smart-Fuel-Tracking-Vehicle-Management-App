@@ -19,11 +19,11 @@ export default function SettingsScreen() {
   const [darkModeEnabled, setDarkModeEnabled] = useState(true);
 
   const handleProfilePress = () => {
-    Alert.alert("Profile", "Navigate to profile screen");
+    router.push("/profile");
   };
 
   const handleVehiclesPress = () => {
-    Alert.alert("Vehicles", "Navigate to vehicles screen");
+    router.push("/vehicles");
   };
 
   const handlePrivacyPolicyPress = () => {
@@ -45,7 +45,7 @@ export default function SettingsScreen() {
         title="Settings"
         subtitle="Manage your preferences"
         onMenuPress={() => setDrawerVisible(true)}
-        onProfilePress={() => Alert.alert("Profile", "View profile")}
+        onProfilePress={handleProfilePress}
       />
 
       <ScrollView

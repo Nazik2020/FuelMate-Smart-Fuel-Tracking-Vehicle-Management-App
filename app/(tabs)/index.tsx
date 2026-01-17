@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from "react";
 import CardMExpense from "@/components/DashBoard Components/CardMExpense";
 import CardMSpend from "@/components/DashBoard Components/CardMSpend";
 import Rectangle2 from "@/components/DashBoard Components/Rectangle2";
 import Rectangle3 from "@/components/DashBoard Components/Rectangle3";
 import DrawerMenu from "@/components/DrawerMenu";
+import { getBarChartData, getFuelLogs } from "@/config/HomeDashboard";
 import { Ionicons } from "@expo/vector-icons";
+import React, { useEffect, useState } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -16,12 +17,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "@/constants/theme";
 
 export default function HomeScreen() {
+  const [drawerVisible, setDrawerVisible] = useState(false);
   const [fuelLogs, setFuelLogs] = useState<
     { userId: string; fuelStation: string; date: string; totalCost: number }[]
   >([]);
-  const [chartData, setChartData] = useState<{ label: string; value: number }[]>(
-    []
-  );
+  const [chartData, setChartData] = useState<
+    { label: string; value: number }[]
+  >([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -173,5 +175,4 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     marginBottom: 10,
   },
-
 });
