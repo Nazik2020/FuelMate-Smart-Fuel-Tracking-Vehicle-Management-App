@@ -1,13 +1,22 @@
-import { collection, getDocs } from "firebase/firestore";
-import { firestore } from "./firebase";
+import { collection, getDocs, query, where } from "firebase/firestore";
+import { auth, db } from "./firebase";
 
 // ----------------- Fetch fuel logs -----------------
 export const getFuelLogs = async (): Promise<
   { userId: string; fuelStation: string; date: string; totalCost: number }[]
 > => {
   try {
-    const fuelLogsCollection = collection(firestore, "fuelLogs");
-    const querySnapshot = await getDocs(fuelLogsCollection);
+    if (!auth.currentUser) {
+      console.warn("Skipping fuel logs fetch: user not authenticated");
+      return [];
+    }
+
+    const fuelLogsCollection = collection(db, "fuelLogs");
+    const userQuery = query(
+      fuelLogsCollection,
+      where("userId", "==", auth.currentUser.uid)
+    );
+    const querySnapshot = await getDocs(userQuery);
 
     const logs: {
       userId: string;
@@ -19,18 +28,15 @@ export const getFuelLogs = async (): Promise<
       const data = doc.data();
       if (data) {
         logs.push({
-          userId: doc.id,
+          userId: data.userId || "",
           fuelStation: data.fuelStation || "Unknown",
-          date: data.date
-            ? data.date.toDate
-              ? data.date.toDate().toLocaleString("en-GB", {
-                  day: "2-digit",
-                  month: "short",
-                  year: "numeric",
-                })
-              : data.date
-            : "Unknown",
-
+          date: data.date?.toDate
+            ? data.date.toDate().toLocaleString("en-GB", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+              })
+            : data.date || "Unknown",
           totalCost: data.totalCost || 0,
         });
       }

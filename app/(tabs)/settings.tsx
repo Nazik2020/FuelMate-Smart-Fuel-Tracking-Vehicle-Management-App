@@ -8,9 +8,11 @@ import {
 } from "@/components/Settings";
 import { Colors } from "@/constants/theme";
 import { useRouter } from "expo-router";
+import { signOut } from "firebase/auth";
 import React, { useState } from "react";
 import { Alert, ScrollView, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { auth } from "@/config/firebase";
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -36,6 +38,20 @@ export default function SettingsScreen() {
 
   const handleAboutPress = () => {
     Alert.alert("About Us", "FuelMate App v1.0.0");
+  };
+
+  const handleLogout = () => {
+    Alert.alert("Log out", "Do you want to log out?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Log out",
+        style: "destructive",
+        onPress: async () => {
+          await signOut(auth);
+          router.replace("/loginpage");
+        },
+      },
+    ]);
   };
 
   return (
@@ -120,6 +136,13 @@ export default function SettingsScreen() {
             title="About Us"
             subtitle="App version 1.0.0"
             onPress={handleAboutPress}
+          />
+          <SettingsItem
+            icon="log-out-outline"
+            iconColor={Colors.error}
+            iconBackground={Colors.error + "20"}
+            title="Log out"
+            onPress={handleLogout}
             isLast
           />
         </SettingsSection>
