@@ -14,6 +14,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Colors } from "@/constants/theme";
 
 export default function HomeScreen() {
   const [drawerVisible, setDrawerVisible] = useState(false);

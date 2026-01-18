@@ -1,11 +1,9 @@
-// app/login.tsx
-import { MaterialIcons } from "@expo/vector-icons";
+import { AntDesign, MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Link, useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
   Alert,
-  Dimensions,
   Image,
   StyleSheet,
   Text,
@@ -15,58 +13,57 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { auth, db } from "@/config/firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { collection, getDocs, query, where } from "firebase/firestore";
-
-const { width } = Dimensions.get("window");
+import { doc, getDoc } from "firebase/firestore";
+import { auth, db } from "@/config/firebase"; // adjust if your path differs
 
 export const options = {
   headerShown: false,
 };
 
+// simple email validation
+const isValidEmail = (email: string) => {
+  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return regex.test(email);
+};
+
 export default function LoginPage() {
   const router = useRouter();
 
-  // 🔹 states added
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  // 🔹 sign in logic
   const handleSignIn = async () => {
-    if (!username || !password) {
+    if (!email || !password) {
       Alert.alert("Error", "Please fill all fields");
       return;
     }
 
+    if (!isValidEmail(email)) {
+      Alert.alert("Error", "Please enter a valid email");
+      return;
+    }
+
     try {
-      const userQuery = query(
-        collection(db, "users"),
-        where("username", "==", username.trim().toLowerCase()),
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
       );
-      const userSnapshot = await getDocs(userQuery);
-      if (userSnapshot.empty) {
-        Alert.alert("Error", "Username not found");
+
+      const user = userCredential.user;
+
+      // Optional: verify user data exists in Firestore
+      const userDoc = await getDoc(doc(db, "users", user.uid));
+      if (!userDoc.exists()) {
+        Alert.alert("Error", "User data not found in database");
         return;
       }
 
-      const userDoc = userSnapshot.docs[0];
-      const userData = userDoc.data();
-      const emailFromUsername = userData.email;
-      if (!emailFromUsername) {
-        Alert.alert("Error", "Email not found for this username");
-        return;
-      }
-
-      // Firebase Auth login
-      await signInWithEmailAndPassword(auth, emailFromUsername, password);
-
-      // clear inputs
-      setUsername("");
+      setEmail("");
       setPassword("");
 
-      // navigate to main tabs
-      router.replace("/(tabs)");
+      router.replace("/dashboard"); // update route if needed
     } catch (error: any) {
       Alert.alert("Login Failed", error.message);
     }
@@ -82,7 +79,7 @@ export default function LoginPage() {
       <SafeAreaView style={styles.container}>
         {/* Logo */}
         <Image
-          source={require("@/assets/images/fuletrackerlogo.png")}
+          source={require("../assets/images/fuletrackerlogo.png")}
           style={styles.logo}
         />
 
@@ -96,17 +93,18 @@ export default function LoginPage() {
 
         {/* Form */}
         <View style={styles.form}>
-          {/* Username */}
-          <Text style={styles.label}>Username</Text>
+          {/* Email */}
+          <Text style={styles.label}>Email</Text>
           <View style={styles.inputBox}>
-            <MaterialIcons name="person" size={22} color="#9a9696ff" />
+            <MaterialIcons name="email" size={22} color="#9a9696ff" />
             <TextInput
-              placeholder="Enter your username"
+              placeholder="Enter your email address"
               placeholderTextColor="#83888B"
               style={styles.input}
+              keyboardType="email-address"
               autoCapitalize="none"
-              value={username}
-              onChangeText={setUsername}
+              value={email}
+              onChangeText={setEmail}
             />
           </View>
 
@@ -131,6 +129,21 @@ export default function LoginPage() {
         {/* Sign In Button */}
         <TouchableOpacity style={styles.signinbutton} onPress={handleSignIn}>
           <Text style={styles.signinbuttontext}>Sign In</Text>
+        </TouchableOpacity>
+
+        {/* Divider */}
+        <View style={styles.dividerContainer}>
+          <View style={styles.line} />
+          <Text style={styles.dividerText}>OR</Text>
+          <View style={styles.line} />
+        </View>
+
+        {/* Google */}
+        <TouchableOpacity style={styles.signinwithgooglebutton}>
+          <AntDesign name="google" size={24} />
+          <Text style={styles.signinwithgooglebuttontext}>
+            Sign in with Google
+          </Text>
         </TouchableOpacity>
 
         {/* Signup */}
@@ -216,6 +229,37 @@ const styles = StyleSheet.create({
     color: "#ffffff",
     fontSize: 16,
     fontWeight: "600",
+  },
+  dividerContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  line: {
+    flex: 1,
+    height: 1,
+    backgroundColor: "#ffffff",
+  },
+  dividerText: {
+    marginHorizontal: 10,
+    color: "#ffffff",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  signinwithgooglebutton: {
+    flexDirection: "row",
+    backgroundColor: "#ffffff",
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 20,
+  },
+  signinwithgooglebuttontext: {
+    marginLeft: 10,
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#333333",
   },
   signupcontainer: {
     alignItems: "center",

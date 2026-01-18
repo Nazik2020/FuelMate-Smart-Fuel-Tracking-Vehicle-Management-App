@@ -1,4 +1,3 @@
-import { auth, db } from "@/config/firebase";
 import { MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Link, useRouter } from "expo-router";
@@ -12,9 +11,8 @@ import {
   setDoc,
   where,
 } from "firebase/firestore";
-import { useState } from "react";
+import React, { useState } from "react";
 import {
-  Dimensions,
   Image,
   ScrollView,
   StyleSheet,
@@ -22,22 +20,18 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-const { width } = Dimensions.get("window");
+import { auth, db } from "@/config/firebase"; // adjust if needed
 
 export const options = {
   headerShown: false,
 };
 
-// ✅ Email validation function
-const isValidEmail = (email: string) => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
-};
+const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-export default function signuppage() {
+export default function SignupPage() {
   const router = useRouter();
 
   const [firstName, setFirstName] = useState("");
@@ -57,46 +51,45 @@ export default function signuppage() {
       !password ||
       !confirmPassword
     ) {
-      alert("Please fill all fields");
+      Alert.alert("Error", "Please fill all fields");
       return;
     }
 
     if (!isValidEmail(email)) {
-      alert("Please enter a valid email address");
+      Alert.alert("Error", "Please enter a valid email address");
       return;
     }
 
     if (password.length < 6) {
-      alert("Password must be at least 6 characters");
+      Alert.alert("Error", "Password must be at least 6 characters");
       return;
     }
 
     if (password !== confirmPassword) {
-      alert("Passwords do not match");
+      Alert.alert("Error", "Passwords do not match");
       return;
     }
 
     try {
+      // ensure username is unique (case-insensitive)
       const usernameQuery = query(
         collection(db, "users"),
-        where("username", "==", username.trim().toLowerCase()),
+        where("username", "==", username.trim().toLowerCase())
       );
       const usernameSnapshot = await getDocs(usernameQuery);
       if (!usernameSnapshot.empty) {
-        alert("Username already taken");
+        Alert.alert("Error", "Username already taken");
         return;
       }
 
-      // 1️⃣ Create user in Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(
         auth,
-        email,
-        password,
+        email.trim(),
+        password
       );
 
       const user = userCredential.user;
 
-      // 2️⃣ Store user data in Firestore
       await setDoc(doc(db, "users", user.uid), {
         email: user.email,
         firstName: firstName.trim(),
@@ -108,9 +101,8 @@ export default function signuppage() {
         darkMode: false,
       });
 
-      alert("Signup successful!");
+      Alert.alert("Success", "Signup successful!");
 
-      // ✅ Clear input fields after success
       setFirstName("");
       setLastName("");
       setUsername("");
@@ -118,12 +110,10 @@ export default function signuppage() {
       setPassword("");
       setConfirmPassword("");
 
-      // ✅ Move to login page after signup
       router.replace("/loginpage");
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "An error occurred";
-      alert(errorMessage);
+    } catch (error: any) {
+      const message = error?.message ?? "An error occurred";
+      Alert.alert("Signup Failed", message);
     }
   };
 
@@ -188,14 +178,9 @@ export default function signuppage() {
               </View>
             </View>
 
-            {/* Username */}
             <Text style={styles.label}>Username</Text>
             <View style={styles.inputBox}>
-              <MaterialIcons
-                name="alternate-email"
-                size={22}
-                color="#9a9696ff"
-              />
+              <MaterialIcons name="alternate-email" size={22} color="#9a9696ff" />
               <TextInput
                 placeholder="Username"
                 placeholderTextColor="#83888B"
@@ -206,7 +191,6 @@ export default function signuppage() {
               />
             </View>
 
-            {/* Email */}
             <Text style={styles.label}>Email</Text>
             <View style={styles.inputBox}>
               <MaterialIcons name="email" size={22} color="#9a9696ff" />
@@ -221,7 +205,6 @@ export default function signuppage() {
               />
             </View>
 
-            {/* Password */}
             <Text style={styles.label}>Password</Text>
             <View style={styles.inputBox}>
               <MaterialIcons name="lock" size={22} color="#9a9696ff" />
@@ -236,7 +219,6 @@ export default function signuppage() {
               />
             </View>
 
-            {/* Confirm Password */}
             <Text style={styles.label}>Re Enter Password</Text>
             <View style={styles.inputBox}>
               <MaterialIcons name="lock" size={22} color="#9a9696ff" />
@@ -289,7 +271,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 32,
-    alignItems: "center", // center logo/title block horizontally
+    alignItems: "center",
   },
   logo: {
     width: 80,
