@@ -1,7 +1,7 @@
 // app/login.tsx
 import { AntDesign, MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { Link } from "expo-router";
+import { Link, useRouter } from "expo-router";
 import {
   Dimensions,
   Image,
@@ -9,12 +9,15 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import React, { useState } from "react";
 
-
-
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
+import { auth, db } from "../firebase/firebaseConfig"; // adjust path if needed
 
 const { width } = Dimensions.get("window");
 
@@ -22,8 +25,61 @@ export const options = {
   headerShown: false,
 };
 
+// simple email validation
+const isValidEmail = (email: string) => {
+  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return regex.test(email);
+};
+
+
+
 export default function LoginPage() {
-  //const router = useRouter();
+  const router = useRouter();
+
+  // 🔹 states added
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  // 🔹 sign in logic
+  const handleSignIn = async () => {
+    if (!email || !password) {
+      Alert.alert("Error", "Please fill all fields");
+      return;
+    }
+
+    if (!isValidEmail(email)) {
+      Alert.alert("Error", "Please enter a valid email");
+      return;
+    }
+
+    try {
+      // Firebase Auth login
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+
+      const user = userCredential.user;
+
+      // Optional: check user exists in Firestore
+      const userDoc = await getDoc(doc(db, "users", user.uid));
+      if (!userDoc.exists()) {
+        Alert.alert("Error", "User data not found in database");
+        return;
+      }
+
+      // clear inputs
+      setEmail("");
+      setPassword("");
+
+      // navigate to dashboard
+      router.replace("/dashboard"); // or "/index" if dashboard is index.tsx
+    } catch (error: any) {
+      Alert.alert("Login Failed", error.message);
+    }
+  };
+
   return (
     <LinearGradient
       colors={["#0C9396", "#E4D7A4"]}
@@ -32,7 +88,6 @@ export default function LoginPage() {
       style={{ flex: 1 }}
     >
       <SafeAreaView style={styles.container}>
-
         {/* Logo */}
         <Image
           source={require("../assets/images/fuletrackerlogo.png")}
@@ -49,21 +104,18 @@ export default function LoginPage() {
 
         {/* Form */}
         <View style={styles.form}>
-
           {/* Email */}
           <Text style={styles.label}>Email</Text>
           <View style={styles.inputBox}>
-
             <MaterialIcons name="email" size={22} color="#9a9696ff" />
-
-
             <TextInput
-
               placeholder="Enter your email address"
               placeholderTextColor="#83888B"
               style={styles.input}
               keyboardType="email-address"
               autoCapitalize="none"
+              value={email}
+              onChangeText={setEmail}
             />
           </View>
 
@@ -77,29 +129,35 @@ export default function LoginPage() {
               secureTextEntry
               style={styles.input}
               autoCapitalize="none"
+              value={password}
+              onChangeText={setPassword}
             />
           </View>
+
           <Text style={styles.label1}>Forgot Password?</Text>
-
-
-
         </View>
-        <TouchableOpacity style={styles.signinbutton}>
-          <Text style={styles.signinbuttontext}>sign In</Text>
+
+        {/* Sign In Button */}
+        <TouchableOpacity style={styles.signinbutton} onPress={handleSignIn}>
+          <Text style={styles.signinbuttontext}>Sign In</Text>
         </TouchableOpacity>
 
-
+        {/* Divider */}
         <View style={styles.dividerContainer}>
           <View style={styles.line} />
           <Text style={styles.dividerText}>OR</Text>
           <View style={styles.line} />
         </View>
 
+        {/* Google */}
         <TouchableOpacity style={styles.signinwithgooglebutton}>
           <AntDesign name="google" size={24} />
-          <Text style={styles.signinwithgooglebuttontext}>Sign in with Google</Text>
+          <Text style={styles.signinwithgooglebuttontext}>
+            Sign in with Google
+          </Text>
         </TouchableOpacity>
 
+        {/* Signup */}
         <View style={styles.signupcontainer}>
           <Text style={styles.donttext}>
             Don’t have an account?{" "}
@@ -110,13 +168,6 @@ export default function LoginPage() {
             </Link>
           </Text>
         </View>
-
-
-
-
-
-
-
       </SafeAreaView>
     </LinearGradient>
   );
@@ -125,150 +176,107 @@ export default function LoginPage() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: "center",
     paddingHorizontal: 20,
+    justifyContent: "center",
   },
-
   logo: {
-    width: 80,
-    height: 80,
-    marginTop: 40,
+    width: 100,
+    height: 100,
+    alignSelf: "center",
     marginBottom: 20,
   },
-
   title: {
-    fontSize: 30,
-    fontWeight: "600",
-    color: "#fff",
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "#ffffff",
+    textAlign: "center",
     marginBottom: 10,
   },
-
   subtitle: {
-    fontSize: 15,
-    color: "#fff",
+    fontSize: 14,
+    color: "#ffffff",
     textAlign: "center",
-    lineHeight: 22,
-    marginBottom: 40,
-    paddingHorizontal: 10,
+    marginBottom: 30,
   },
-
   form: {
-    width: "100%",
+    marginBottom: 20,
   },
-
   label: {
-    fontSize: 16,
-    color: "#fff",
-    marginBottom: 6,
-    marginTop: 16,
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#ffffff",
+    marginBottom: 8,
   },
   label1: {
-    fontSize: 16,
-    color: "#fff",
-    marginBottom: 6,
-    marginTop: 16,
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#ffffff",
+    marginTop: 10,
     textAlign: "right",
   },
-
-
   inputBox: {
-    backgroundColor: "#fff",
-    borderRadius: 10,
-    height: 50,
-    width: "100%",
-    paddingHorizontal: 12,
     flexDirection: "row",
     alignItems: "center",
-
+    backgroundColor: "#ffffff",
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    marginBottom: 15,
+    height: 50,
   },
-
   input: {
-    fontSize: 16,
-    color: "#000",
+    flex: 1,
     marginLeft: 10,
-    width: "90%",
-
+    fontSize: 14,
+    color: "#333333",
   },
   signinbutton: {
-    width: "100%",
-    height: 50,
-    backgroundColor: "#005F73",
-    borderRadius: 10,
-    justifyContent: "center",
+    backgroundColor: "#0C9396",
+    paddingVertical: 14,
+    borderRadius: 8,
     alignItems: "center",
-    marginTop: 30,
+    marginBottom: 20,
   },
-
-  signinwithgooglebutton: {
-    width: "100%",
-    height: 50,
-    backgroundColor: "#ffffffff",
-    borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: 20,
-    flexDirection: "row",
-  },
-
   signinbuttontext: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "600",
-  },
-
-  signinwithgooglebuttontext: {
-    color: "#000000ff",
+    color: "#ffffff",
     fontSize: 16,
     fontWeight: "600",
-    marginLeft: 7,
+  },
+  dividerContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 20,
   },
   line: {
     flex: 1,
-    height: 1.5,
-    backgroundColor: "#FFFFFF",
-
+    height: 1,
+    backgroundColor: "#ffffff",
   },
-
-
-
-  dividerContainer: {
-    flexDirection: "row",
-    width: "100%",
-    alignItems: "center",
-    marginTop: 20,
-  },
-
   dividerText: {
     marginHorizontal: 10,
-    color: "#FFFFFF",
+    color: "#ffffff",
     fontSize: 14,
     fontWeight: "600",
-    textAlign: "center",
   },
-  signupText: {
-    marginHorizontal: 6,
-    color: "#FFFFFF",
+  signinwithgooglebutton: {
+    flexDirection: "row",
+    backgroundColor: "#ffffff",
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 20,
+  },
+  signinwithgooglebuttontext: {
+    marginLeft: 10,
     fontSize: 16,
     fontWeight: "600",
-    textAlign: "center",
-  },
-  donttext: {
-    color: "#FFFFFF",
-    fontSize: 15,
-
-
+    color: "#333333",
   },
   signupcontainer: {
-    flexDirection: "row",
-    marginTop: 30,
     alignItems: "center",
-  }
-
-
-
-
-
-
-
-
+  },
+  donttext: {
+    color: "#ffffff",
+    fontSize: 14,
+  },
 });
