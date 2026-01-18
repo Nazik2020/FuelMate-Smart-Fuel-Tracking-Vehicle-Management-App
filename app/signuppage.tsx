@@ -1,4 +1,3 @@
-
 import { AntDesign, MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { createUserWithEmailAndPassword } from "firebase/auth";
@@ -16,14 +15,16 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { auth, db } from "../firebase/firebaseConfig";
 
-
-
-
-
 const { width } = Dimensions.get("window");
 
 export const options = {
   headerShown: false,
+};
+
+// ✅ Email validation function
+const isValidEmail = (email: string) => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
 };
 
 export default function signuppage() {
@@ -33,43 +34,58 @@ export default function signuppage() {
   const [confirmPassword, setConfirmPassword] = useState("");
 
   const handleSignup = async () => {
-  if (!email || !password || !confirmPassword) {
-    alert("Please fill all fields");
-    return;
-  }
 
-  if (password !== confirmPassword) {
-    alert("Passwords do not match");
-    return;
-  }
+    if (!email || !password || !confirmPassword) {
+      alert("Please fill all fields");
+      return;
+    }
 
-  try {
-    // 1. Create user in Firebase Auth
-    const userCredential = await createUserWithEmailAndPassword(
-      auth,
-      email,
-      password
-    );
+    if (!isValidEmail(email)) {
+      alert("Please enter a valid email address");
+      return;
+    }
 
-    const user = userCredential.user;
+    if (password.length < 6) {
+      alert("Password must be at least 6 characters");
+      return;
+    }
 
-    // 2. Store user data in Firestore
-    await setDoc(doc(db, "users", user.uid), {
-      email: user.email,
-      role: "user",
-      createdAt: serverTimestamp(),
-      notificationsEnabled: true,
-      darkMode: false,
-    });
+    if (password !== confirmPassword) {
+      alert("Passwords do not match");
+      return;
+    }
 
-    alert("Signup successful!");
+    try {
+      // 1️⃣ Create user in Firebase Auth
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
 
-  } catch (error) {
-    alert(error.message);
-  }
-};
+      const user = userCredential.user;
 
+      // 2️⃣ Store user data in Firestore
+      await setDoc(doc(db, "users", user.uid), {
+        email: user.email,
+        role: "user",
+        createdAt: serverTimestamp(),
+        notificationsEnabled: true,
+        darkMode: false,
+      });
 
+      alert("Signup successful!");
+
+      // ✅ Clear input fields after success
+      setEmail("");
+      setPassword("");
+      setConfirmPassword("");
+
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "An error occurred";
+      alert(errorMessage);
+    }
+  };
 
   return (
     <LinearGradient
@@ -100,19 +116,15 @@ export default function signuppage() {
           {/* Email */}
           <Text style={styles.label}>Email</Text>
           <View style={styles.inputBox}>
-
             <MaterialIcons name="email" size={22} color="#9a9696ff" />
-
-
             <TextInput
-
               placeholder="Enter your email address"
               placeholderTextColor="#83888B"
               style={styles.input}
               keyboardType="email-address"
               autoCapitalize="none"
               value={email}
-              onChangeText={setEmail}
+              onChangeText={(text) => setEmail(text.trim())}
             />
           </View>
 
@@ -131,6 +143,7 @@ export default function signuppage() {
             />
           </View>
 
+          {/* Confirm Password */}
           <Text style={styles.label}>Re Enter Password</Text>
           <View style={styles.inputBox}>
             <MaterialIcons name="lock" size={22} color="#9a9696ff" />
@@ -145,16 +158,13 @@ export default function signuppage() {
             />
           </View>
 
-
-
-
         </View>
+
         <TouchableOpacity style={styles.signupbutton} onPress={handleSignup}>
           <Text style={styles.signupbuttontext}>Sign Up</Text>
         </TouchableOpacity>
 
-
-        <View style={styles.dividerContainer}>
+        {/*<View style={styles.dividerContainer}>
           <View style={styles.line} />
           <Text style={styles.dividerText}>OR</Text>
           <View style={styles.line} />
@@ -162,8 +172,10 @@ export default function signuppage() {
 
         <TouchableOpacity style={styles.signupwithgooglebutton}>
           <AntDesign name="google" size={24} />
-          <Text style={styles.signupwithgooglebuttontext}>Sign up with Google</Text>
-        </TouchableOpacity>
+          <Text style={styles.signupwithgooglebuttontext}>
+            Sign up with Google
+          </Text>
+        </TouchableOpacity>*/}
 
       </SafeAreaView>
     </LinearGradient>
@@ -176,21 +188,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 20,
   },
-
   logo: {
     width: 80,
     height: 80,
     marginTop: 40,
     marginBottom: 20,
   },
-
   title: {
     fontSize: 30,
     fontWeight: "600",
     color: "#fff",
     marginBottom: 10,
   },
-
   subtitle: {
     fontSize: 15,
     color: "#fff",
@@ -199,26 +208,15 @@ const styles = StyleSheet.create({
     marginBottom: 40,
     paddingHorizontal: 10,
   },
-
   form: {
     width: "100%",
   },
-
   label: {
     fontSize: 16,
     color: "#fff",
     marginBottom: 6,
     marginTop: 16,
   },
-  label1: {
-    fontSize: 16,
-    color: "#fff",
-    marginBottom: 6,
-    marginTop: 16,
-    textAlign: "right",
-  },
-
-
   inputBox: {
     backgroundColor: "#fff",
     borderRadius: 10,
@@ -227,15 +225,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     flexDirection: "row",
     alignItems: "center",
-
   },
-
   input: {
     fontSize: 16,
     color: "#000",
     marginLeft: 10,
     width: "90%",
-
   },
   signupbutton: {
     width: "100%",
@@ -246,77 +241,42 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 30,
   },
-
+  signupbuttontext: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "600",
+  },
   signupwithgooglebutton: {
     width: "100%",
     height: 50,
-    backgroundColor: "#ffffffff",
+    backgroundColor: "#fff",
     borderRadius: 10,
     justifyContent: "center",
     alignItems: "center",
     marginTop: 20,
     flexDirection: "row",
   },
-
-  signupbuttontext: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "600",
-  },
-
   signupwithgooglebuttontext: {
-    color: "#000000ff",
+    color: "#000",
     fontSize: 16,
     fontWeight: "600",
     marginLeft: 7,
   },
-  line: {
-    flex: 1,
-    height: 1.5,
-    backgroundColor: "#FFFFFF",
-
-  },
-
-
-
   dividerContainer: {
     flexDirection: "row",
     width: "100%",
     alignItems: "center",
     marginTop: 20,
   },
-
+  line: {
+    flex: 1,
+    height: 1.5,
+    backgroundColor: "#FFFFFF",
+  },
   dividerText: {
     marginHorizontal: 10,
     color: "#FFFFFF",
     fontSize: 14,
     fontWeight: "600",
-    textAlign: "center",
   },
-  signupText: {
-    marginHorizontal: 6,
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "600",
-    textAlign: "center",
-  },
-  donttext: {
-    color: "#FFFFFF",
-    fontSize: 15,
-
-
-  },
-  signupcontainer: {
-    flexDirection: "row",
-    marginTop: 30,
-    alignItems: "center",
-  }
-
-
-
-
-
-
-
-
 });
