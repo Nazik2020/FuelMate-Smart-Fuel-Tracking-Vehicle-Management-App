@@ -1,4 +1,4 @@
-import { AntDesign, MaterialIcons } from "@expo/vector-icons";
+import { MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Link, useRouter } from "expo-router";
 import React, { useState } from "react";
@@ -13,59 +13,84 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "@/config/firebase"; // adjust if your path differs
+import { signInWithEmailAndPassword } from "firebase/auth";
+import {
+  collection,
+  doc,
+  getDocs,
+  query,
+  updateDoc,
+  where,
+} from "firebase/firestore";
 
 export const options = {
   headerShown: false,
 };
 
-// simple email validation
-const isValidEmail = (email: string) => {
-  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return regex.test(email);
-};
-
 export default function LoginPage() {
   const router = useRouter();
 
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
   const handleSignIn = async () => {
-    if (!email || !password) {
+    if (!username || !password) {
       Alert.alert("Error", "Please fill all fields");
       return;
     }
 
-    if (!isValidEmail(email)) {
-      Alert.alert("Error", "Please enter a valid email");
-      return;
-    }
-
     try {
-      const userCredential = await signInWithEmailAndPassword(
-        auth,
-        email,
-        password
+      const trimmedUsername = username.trim();
+      const normalizedUsername = trimmedUsername.toLowerCase();
+
+      const usernameLowerQuery = query(
+        collection(db, "users"),
+        where("usernameLower", "==", normalizedUsername),
       );
+      let userSnapshot = await getDocs(usernameLowerQuery);
 
-      const user = userCredential.user;
+      if (userSnapshot.empty) {
+        const legacyUsernameQuery = query(
+          collection(db, "users"),
+          where("username", "==", normalizedUsername),
+        );
+        userSnapshot = await getDocs(legacyUsernameQuery);
+      }
 
-      // Optional: verify user data exists in Firestore
-      const userDoc = await getDoc(doc(db, "users", user.uid));
-      if (!userDoc.exists()) {
-        Alert.alert("Error", "User data not found in database");
+      if (userSnapshot.empty) {
+        Alert.alert("Login Failed", "Invalid username or password");
         return;
       }
 
-      setEmail("");
+      const userDoc = userSnapshot.docs[0];
+      const userEmail = userDoc.data()?.email as string | undefined;
+
+      if (!userEmail) {
+        Alert.alert("Login Failed", "Unable to find an email for this user");
+        return;
+      }
+
+      const storedUsername = userDoc.data()?.username as string | undefined;
+      if (!storedUsername || storedUsername !== trimmedUsername) {
+        try {
+          await updateDoc(doc(db, "users", userDoc.id), {
+            username: trimmedUsername,
+            usernameLower: normalizedUsername,
+          });
+        } catch (error) {
+          // non-blocking; authentication should proceed even if this fails
+        }
+      }
+
+      await signInWithEmailAndPassword(auth, userEmail, password);
+
+      setUsername("");
       setPassword("");
 
-      router.replace("/dashboard"); // update route if needed
+      router.replace("/(tabs)");
     } catch (error: any) {
-      Alert.alert("Login Failed", error.message);
+      Alert.alert("Login Failed", "Invalid username or password");
     }
   };
 
@@ -93,18 +118,17 @@ export default function LoginPage() {
 
         {/* Form */}
         <View style={styles.form}>
-          {/* Email */}
-          <Text style={styles.label}>Email</Text>
+          {/* Username */}
+          <Text style={styles.label}>Username</Text>
           <View style={styles.inputBox}>
-            <MaterialIcons name="email" size={22} color="#9a9696ff" />
+            <MaterialIcons name="person" size={22} color="#9a9696ff" />
             <TextInput
-              placeholder="Enter your email address"
+              placeholder="Enter your username"
               placeholderTextColor="#83888B"
               style={styles.input}
-              keyboardType="email-address"
               autoCapitalize="none"
-              value={email}
-              onChangeText={setEmail}
+              value={username}
+              onChangeText={(text) => setUsername(text.trimStart())}
             />
           </View>
 
@@ -129,21 +153,6 @@ export default function LoginPage() {
         {/* Sign In Button */}
         <TouchableOpacity style={styles.signinbutton} onPress={handleSignIn}>
           <Text style={styles.signinbuttontext}>Sign In</Text>
-        </TouchableOpacity>
-
-        {/* Divider */}
-        <View style={styles.dividerContainer}>
-          <View style={styles.line} />
-          <Text style={styles.dividerText}>OR</Text>
-          <View style={styles.line} />
-        </View>
-
-        {/* Google */}
-        <TouchableOpacity style={styles.signinwithgooglebutton}>
-          <AntDesign name="google" size={24} />
-          <Text style={styles.signinwithgooglebuttontext}>
-            Sign in with Google
-          </Text>
         </TouchableOpacity>
 
         {/* Signup */}
@@ -229,37 +238,6 @@ const styles = StyleSheet.create({
     color: "#ffffff",
     fontSize: 16,
     fontWeight: "600",
-  },
-  dividerContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  line: {
-    flex: 1,
-    height: 1,
-    backgroundColor: "#ffffff",
-  },
-  dividerText: {
-    marginHorizontal: 10,
-    color: "#ffffff",
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  signinwithgooglebutton: {
-    flexDirection: "row",
-    backgroundColor: "#ffffff",
-    paddingVertical: 14,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 20,
-  },
-  signinwithgooglebuttontext: {
-    marginLeft: 10,
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#333333",
   },
   signupcontainer: {
     alignItems: "center",

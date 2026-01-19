@@ -1,3 +1,4 @@
+import { auth, db } from "@/config/firebase"; // adjust if needed
 import { MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Link, useRouter } from "expo-router";
@@ -13,6 +14,7 @@ import {
 } from "firebase/firestore";
 import React, { useState } from "react";
 import {
+  Alert,
   Image,
   ScrollView,
   StyleSheet,
@@ -20,16 +22,15 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { auth, db } from "@/config/firebase"; // adjust if needed
 
 export const options = {
   headerShown: false,
 };
 
-const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+const isValidEmail = (email: string) =>
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
 export default function SignupPage() {
   const router = useRouter();
@@ -43,6 +44,9 @@ export default function SignupPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleSignup = async () => {
+    const trimmedUsername = username.trim();
+    const normalizedUsername = trimmedUsername.toLowerCase();
+
     if (
       !firstName ||
       !lastName ||
@@ -72,12 +76,20 @@ export default function SignupPage() {
 
     try {
       // ensure username is unique (case-insensitive)
-      const usernameQuery = query(
+      const usernameLowerQuery = query(
         collection(db, "users"),
-        where("username", "==", username.trim().toLowerCase())
+        where("usernameLower", "==", normalizedUsername),
       );
-      const usernameSnapshot = await getDocs(usernameQuery);
-      if (!usernameSnapshot.empty) {
+      const legacyUsernameQuery = query(
+        collection(db, "users"),
+        where("username", "==", normalizedUsername),
+      );
+
+      const [usernameLowerSnapshot, legacyUsernameSnapshot] = await Promise.all(
+        [getDocs(usernameLowerQuery), getDocs(legacyUsernameQuery)],
+      );
+
+      if (!usernameLowerSnapshot.empty || !legacyUsernameSnapshot.empty) {
         Alert.alert("Error", "Username already taken");
         return;
       }
@@ -85,7 +97,7 @@ export default function SignupPage() {
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         email.trim(),
-        password
+        password,
       );
 
       const user = userCredential.user;
@@ -94,7 +106,8 @@ export default function SignupPage() {
         email: user.email,
         firstName: firstName.trim(),
         lastName: lastName.trim(),
-        username: username.trim().toLowerCase(),
+        username: trimmedUsername,
+        usernameLower: normalizedUsername,
         role: "user",
         createdAt: serverTimestamp(),
         notificationsEnabled: true,
@@ -180,7 +193,11 @@ export default function SignupPage() {
 
             <Text style={styles.label}>Username</Text>
             <View style={styles.inputBox}>
-              <MaterialIcons name="alternate-email" size={22} color="#9a9696ff" />
+              <MaterialIcons
+                name="alternate-email"
+                size={22}
+                color="#9a9696ff"
+              />
               <TextInput
                 placeholder="Username"
                 placeholderTextColor="#83888B"

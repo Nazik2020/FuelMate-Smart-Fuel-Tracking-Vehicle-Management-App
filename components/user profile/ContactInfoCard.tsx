@@ -4,9 +4,18 @@ import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 interface ContactInfoCardProps {
-  email: string;
-  phone: string;
+  email?: string | null;
+  phone?: string | null;
 }
+
+const getFieldValue = (value?: string | null) => {
+  if (typeof value !== "string") {
+    return "Not provided";
+  }
+
+  const trimmed = value.trim();
+  return trimmed.length ? trimmed : "Not provided";
+};
 
 export function ContactInfoCard({ email, phone }: ContactInfoCardProps) {
   return (
@@ -19,7 +28,7 @@ export function ContactInfoCard({ email, phone }: ContactInfoCardProps) {
         </View>
         <View style={styles.infoBlock}>
           <Text style={styles.label}>Email</Text>
-          <Text style={styles.value}>{email}</Text>
+          <Text style={styles.value}>{getFieldValue(email)}</Text>
         </View>
       </View>
 
@@ -31,7 +40,7 @@ export function ContactInfoCard({ email, phone }: ContactInfoCardProps) {
         </View>
         <View style={styles.infoBlock}>
           <Text style={styles.label}>Phone</Text>
-          <Text style={styles.value}>{phone}</Text>
+          <Text style={styles.value}>{getFieldValue(phone)}</Text>
         </View>
       </View>
     </View>

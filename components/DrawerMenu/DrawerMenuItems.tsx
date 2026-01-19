@@ -1,9 +1,16 @@
+import { auth } from "@/config/firebase";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { signOut } from "firebase/auth";
 import React from "react";
-import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { auth } from "@/config/firebase";
+import {
+  Alert,
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 interface MenuItem {
   name: string;
@@ -18,13 +25,22 @@ interface DrawerMenuItemsProps {
 
 const menuItems: MenuItem[] = [
   { name: "Home", icon: "home", route: "/(tabs)" },
-  { name: "Profile", icon: "person-outline", route: null },
+  { name: "Profile", icon: "person-outline", route: "/profile" },
   { name: "Logs", icon: "speedometer-outline", route: "/(tabs)/logs" }, // Updated per instructions
   { name: "Ride", icon: "map-outline", route: "/(tabs)/ride" },
   { name: "Notifications", icon: "notifications-outline", route: null },
   { name: "Contact Us", icon: "call-outline", route: null },
   { name: "Settings", icon: "settings-outline", route: "/(tabs)/settings" },
 ];
+
+const confirmOnWeb = (message: string) => {
+  const confirmFn = (globalThis as { confirm?: (msg?: string) => boolean })
+    ?.confirm;
+  if (typeof confirmFn !== "function") {
+    return true;
+  }
+  return confirmFn(message);
+};
 
 export default function DrawerMenuItems({
   activeRoute = "/(tabs)",
@@ -39,7 +55,25 @@ export default function DrawerMenuItems({
     }
   };
 
+  const performLogout = async () => {
+    try {
+      await signOut(auth);
+    } catch (err) {
+      console.warn("Sign-out failed", err);
+    }
+    onItemPress?.();
+    router.replace("/loginpage" as any);
+  };
+
   const handleLogout = () => {
+    if (Platform.OS === "web") {
+      const confirmed = confirmOnWeb("Are you sure you want to logout?");
+      if (confirmed) {
+        performLogout();
+      }
+      return;
+    }
+
     Alert.alert("Logout", "Are you sure you want to logout?", [
       {
         text: "Cancel",
@@ -48,15 +82,7 @@ export default function DrawerMenuItems({
       {
         text: "Logout",
         style: "destructive",
-        onPress: async () => {
-          try {
-            await signOut(auth);
-          } catch (err) {
-            console.warn("Sign-out failed", err);
-          }
-          onItemPress?.();
-          router.replace("/loginpage" as any);
-        },
+        onPress: performLogout,
       },
     ]);
   };
