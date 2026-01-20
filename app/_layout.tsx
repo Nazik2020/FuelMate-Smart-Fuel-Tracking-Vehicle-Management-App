@@ -1,9 +1,7 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
-
-
+import React from 'react';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export const unstable_settings = {
@@ -15,11 +13,14 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
+      <Stack initialRouteName="loginpage">
         <Stack.Screen name="loginpage" options={{ headerShown: false }} />
         <Stack.Screen name="signuppage" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="(admin)" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+        <Stack.Screen name="profile/index" options={{ title: 'Profile' }} />
+        <Stack.Screen name="vehicles/index" options={{ title: 'Vehicles' }} />
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>

@@ -1,11 +1,39 @@
+import { firestore, auth } from "./firebase";
+import { onAuthStateChanged } from "firebase/auth";
 import { collection, getDocs } from "firebase/firestore";
-import { firestore } from "./firebase";
+
+// Helper to wait for auth state
+const waitForAuth = (): Promise<void> => {
+  return new Promise((resolve) => {
+    // If already logged in, resolve immediately
+    if (auth.currentUser) {
+      resolve();
+      return;
+    }
+
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        unsubscribe();
+        resolve();
+      }
+    });
+
+    // Timeout after 5 seconds to avoid hanging forever
+    setTimeout(() => {
+      unsubscribe();
+      resolve();
+    }, 5000);
+  });
+};
 
 // ----------------- Fetch fuel logs -----------------
 export const getFuelLogs = async (): Promise<
   { userId: string; fuelStation: string; date: string; totalCost: number }[]
 > => {
   try {
+    // Ensure we are authenticated before fetching
+    await waitForAuth();
+
     const fuelLogsCollection = collection(firestore, "fuelLogs");
     const querySnapshot = await getDocs(fuelLogsCollection);
 
@@ -24,10 +52,10 @@ export const getFuelLogs = async (): Promise<
           date: data.date
             ? data.date.toDate
               ? data.date.toDate().toLocaleString("en-GB", {
-                  day: "2-digit",
-                  month: "short",
-                  year: "numeric",
-                })
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+              })
               : data.date
             : "Unknown",
 

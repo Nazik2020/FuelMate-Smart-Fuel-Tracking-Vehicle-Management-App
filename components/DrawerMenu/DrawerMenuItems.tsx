@@ -1,5 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { signOut } from "firebase/auth";
+import { auth } from "@/config/firebase";
 import React from "react";
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
@@ -37,22 +39,17 @@ export default function DrawerMenuItems({
     }
   };
 
-  const handleLogout = () => {
-    Alert.alert("Logout", "Are you sure you want to logout?", [
-      {
-        text: "Cancel",
-        style: "cancel",
-      },
-      {
-        text: "Logout",
-        style: "destructive",
-        onPress: () => {
-          // TODO: Add actual logout logic (clear auth state, tokens, etc.)
-          onItemPress?.();
-          router.replace("/(auth)/login" as any);
-        },
-      },
-    ]);
+  const handleLogout = async () => {
+    console.log("Attempting to logout...");
+    try {
+      onItemPress?.(); // Close drawer first
+      await signOut(auth);
+      console.log("Sign out successful");
+      router.replace("/loginpage");
+    } catch (error) {
+      console.error("Error signing out: ", error);
+      Alert.alert("Error", "Failed to sign out");
+    }
   };
 
   return (

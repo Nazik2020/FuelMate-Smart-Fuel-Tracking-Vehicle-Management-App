@@ -5,6 +5,7 @@ import {
   VehiclesList,
 } from "@/components/user profile";
 import { Colors } from "@/constants/theme";
+import { auth } from "@/config/firebase";
 import React from "react";
 import { ScrollView, StatusBar, StyleSheet, View } from "react-native";
 
@@ -33,13 +34,16 @@ export default function UserProfileScreen() {
       <StatusBar barStyle="dark-content" />
       <ScrollView contentContainerStyle={styles.content}>
         <ProfileHeader
-          name="Alex Johnson"
-          memberSince="Jan 2023"
+          name={auth.currentUser?.email?.split('@')[0] || 'User'}
+          memberSince="Jan 2024"
           onBack={() => null}
           onEditAvatar={() => null}
         />
 
-        <ContactInfoCard email="alex@email.com" phone="+94 77 123 4567" />
+        <ContactInfoCard
+          email={auth.currentUser?.email || "No email"}
+          phone="+94 77 123 4567"
+        />
 
         <VehiclesList vehicles={mockVehicles} />
       </ScrollView>

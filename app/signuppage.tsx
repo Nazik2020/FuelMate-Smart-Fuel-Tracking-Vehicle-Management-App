@@ -3,6 +3,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 import { useState } from "react";
+import { Link, useRouter } from "expo-router";
 import {
   Dimensions,
   Image,
@@ -13,7 +14,7 @@ import {
   View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { auth, db } from "../firebase/firebaseConfig";
+import { auth, db } from "../config/firebase";
 
 const { width } = Dimensions.get("window");
 
@@ -28,6 +29,7 @@ const isValidEmail = (email: string) => {
 };
 
 export default function signuppage() {
+  const router = useRouter();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -80,6 +82,9 @@ export default function signuppage() {
       setEmail("");
       setPassword("");
       setConfirmPassword("");
+
+      // ✅ Navigate to dashboard
+      router.replace("/(tabs)");
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "An error occurred";

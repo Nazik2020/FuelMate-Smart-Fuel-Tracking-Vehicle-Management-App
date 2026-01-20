@@ -15,6 +15,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "@/constants/theme";
+import { auth } from "@/config/firebase";
 
 export default function HomeScreen() {
   const [drawerVisible, setDrawerVisible] = useState(false);
@@ -50,7 +51,9 @@ export default function HomeScreen() {
             </TouchableOpacity>
             <View>
               <Text style={styles.title}>Dashboard</Text>
-              <Text style={styles.subtitle}>Welcome, Alex</Text>
+              <Text style={styles.subtitle}>
+                Welcome, {auth.currentUser?.email?.split('@')[0] || 'User'}
+              </Text>
             </View>
           </View>
           <TouchableOpacity style={styles.profileButton}>

@@ -17,7 +17,7 @@ import React, { useState } from "react";
 
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
-import { auth, db } from "../firebase/firebaseConfig"; // adjust path if needed
+import { auth, db } from "../config/firebase"; // adjust path if needed
 
 const { width } = Dimensions.get("window");
 
@@ -61,21 +61,35 @@ export default function LoginPage() {
       );
 
       const user = userCredential.user;
+      console.log("Sign-in successful for:", user.email);
 
-      // Optional: check user exists in Firestore
-      const userDoc = await getDoc(doc(db, "users", user.uid));
-      if (!userDoc.exists()) {
-        Alert.alert("Error", "User data not found in database");
+      // 🔹 check for admin email FIRST
+      if (email.toLowerCase() === "admin@fuelmat.com") {
+        console.log("Admin detected, redirecting...");
+        setEmail("");
+        setPassword("");
+        router.replace("/(admin)" as any);
         return;
+      }
+
+      // Optional: check user exists in Firestore (for regular users)
+      try {
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (!userDoc.exists()) {
+          console.warn("User doc missing in Firestore for:", user.uid);
+          // We can decide to allow them in anyway or block.
+          // For now, let's keep it optional to prevent total lockout.
+        }
+      } catch (err) {
+        console.error("Firestore check failed:", err);
       }
 
       // clear inputs
       setEmail("");
       setPassword("");
-
-      // navigate to dashboard
-      router.replace("/dashboard"); // or "/index" if dashboard is index.tsx
+      router.replace("/(tabs)");
     } catch (error: any) {
+      console.error("Login Error:", error.code, error.message);
       Alert.alert("Login Failed", error.message);
     }
   };
