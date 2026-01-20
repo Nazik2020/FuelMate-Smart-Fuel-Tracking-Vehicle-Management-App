@@ -5,8 +5,10 @@ import {
   VehiclesList,
 } from "@/components/user profile";
 import { Colors } from "@/constants/theme";
+import { useCurrentUserProfile } from "@/hooks/use-current-user-profile";
+import { useRouter } from "expo-router";
+import React, { useMemo } from "react";
 import { auth } from "@/config/firebase";
-import React from "react";
 import { ScrollView, StatusBar, StyleSheet, View } from "react-native";
 
 const mockVehicles: Vehicle[] = [
@@ -28,22 +30,43 @@ const mockVehicles: Vehicle[] = [
   },
 ];
 
+const formatMemberSince = (value?: { toDate?: () => Date } | Date | null) => {
+  if (!value) {
+    return null;
+  }
+
+  const parsedDate = value instanceof Date ? value : value.toDate?.();
+
+  if (!parsedDate) {
+    return null;
+  }
+
+  return parsedDate.toLocaleDateString(undefined, {
+    month: "short",
+    year: "numeric",
+  });
+};
+
 export default function UserProfileScreen() {
+  const router = useRouter();
+  const { displayName, email, profile } = useCurrentUserProfile();
+  const memberSince = useMemo(
+    () => formatMemberSince(profile?.createdAt ?? null),
+    [profile?.createdAt],
+  );
+
   return (
     <View style={styles.screen}>
       <StatusBar barStyle="dark-content" />
       <ScrollView contentContainerStyle={styles.content}>
         <ProfileHeader
-          name={auth.currentUser?.email?.split('@')[0] || 'User'}
-          memberSince="Jan 2024"
-          onBack={() => null}
+          name={displayName}
+          memberSince={memberSince}
+          onBack={() => router.back()}
           onEditAvatar={() => null}
         />
 
-        <ContactInfoCard
-          email={auth.currentUser?.email || "No email"}
-          phone="+94 77 123 4567"
-        />
+        <ContactInfoCard email={email} phone={profile?.phone ?? null} />
 
         <VehiclesList vehicles={mockVehicles} />
       </ScrollView>

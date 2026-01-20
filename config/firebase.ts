@@ -1,11 +1,8 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+import { getFirestore } from "firebase/firestore";
 
 // Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: "AIzaSyDAAagNjm20pofQPCE7JGJjAiLJQTymiUM",
   authDomain: "fuelmate-5bbe1.firebaseapp.com",
@@ -18,10 +15,8 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-// Initialize Auth
 const auth = getAuth(app);
+const db = getFirestore(app);
+const firestore = db; // alias for backward compatibility
 
-// Export initialized instances
-export { app, db, auth, db as firestore }; // Export both names for compatibility
+export { app, auth, db, firestore };

@@ -1,12 +1,14 @@
+import { useCurrentUserProfile } from "@/hooks/use-current-user-profile";
+import { useRouter } from "expo-router";
 import React from "react";
 import {
-    Animated,
-    Dimensions,
-    Modal,
-    ScrollView,
-    StyleSheet,
-    TouchableOpacity,
-    View,
+  Animated,
+  Dimensions,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import DrawerHeader from "./DrawerMenu/DrawerHeader";
 import DrawerMenuItems from "./DrawerMenu/DrawerMenuItems";
@@ -21,6 +23,13 @@ const DRAWER_WIDTH = width * 0.8;
 
 export default function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
   const slideAnim = React.useRef(new Animated.Value(-DRAWER_WIDTH)).current;
+  const router = useRouter();
+  const { displayName, email } = useCurrentUserProfile();
+
+  const handleProfileNavigate = () => {
+    onClose();
+    router.push("/profile");
+  };
 
   React.useEffect(() => {
     if (visible) {
@@ -60,7 +69,12 @@ export default function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
           ]}
         >
           <ScrollView style={styles.scrollView}>
-            <DrawerHeader onClose={onClose} />
+            <DrawerHeader
+              onClose={onClose}
+              name={displayName}
+              email={email}
+              onProfilePress={handleProfileNavigate}
+            />
             <DrawerMenuItems onItemPress={onClose} />
           </ScrollView>
         </Animated.View>
@@ -93,4 +107,3 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 });
-

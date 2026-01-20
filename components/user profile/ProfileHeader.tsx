@@ -4,11 +4,20 @@ import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 interface ProfileHeaderProps {
-  name: string;
-  memberSince: string;
+  name?: string | null;
+  memberSince?: string | null;
   onBack?: () => void;
   onEditAvatar?: () => void;
 }
+
+const resolveName = (value?: string | null) => {
+  if (typeof value !== "string") {
+    return "Your Profile";
+  }
+
+  const trimmed = value.trim();
+  return trimmed.length ? trimmed : "Your Profile";
+};
 
 export function ProfileHeader({
   name,
@@ -16,6 +25,8 @@ export function ProfileHeader({
   onBack,
   onEditAvatar,
 }: ProfileHeaderProps) {
+  const displayName = resolveName(name);
+
   return (
     <View style={styles.wrapper}>
       <View style={styles.topBar}>
@@ -39,8 +50,12 @@ export function ProfileHeader({
             <Ionicons name="create-outline" size={18} color={Colors.text} />
           </TouchableOpacity>
         </View>
-        <Text style={styles.name}>{name}</Text>
-        <Text style={styles.subtitle}>Member since {memberSince}</Text>
+        <Text style={styles.name}>{displayName}</Text>
+        {memberSince ? (
+          <Text style={styles.subtitle}>Member since {memberSince}</Text>
+        ) : (
+          <Text style={styles.subtitle}>Complete your profile details</Text>
+        )}
       </View>
     </View>
   );

@@ -1,41 +1,22 @@
-import { firestore, auth } from "./firebase";
-import { onAuthStateChanged } from "firebase/auth";
-import { collection, getDocs } from "firebase/firestore";
-
-// Helper to wait for auth state
-const waitForAuth = (): Promise<void> => {
-  return new Promise((resolve) => {
-    // If already logged in, resolve immediately
-    if (auth.currentUser) {
-      resolve();
-      return;
-    }
-
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        unsubscribe();
-        resolve();
-      }
-    });
-
-    // Timeout after 5 seconds to avoid hanging forever
-    setTimeout(() => {
-      unsubscribe();
-      resolve();
-    }, 5000);
-  });
-};
+import { collection, getDocs, query, where } from "firebase/firestore";
+import { auth, db } from "./firebase";
 
 // ----------------- Fetch fuel logs -----------------
 export const getFuelLogs = async (): Promise<
   { userId: string; fuelStation: string; date: string; totalCost: number }[]
 > => {
   try {
-    // Ensure we are authenticated before fetching
-    await waitForAuth();
+    if (!auth.currentUser) {
+      console.warn("Skipping fuel logs fetch: user not authenticated");
+      return [];
+    }
 
-    const fuelLogsCollection = collection(firestore, "fuelLogs");
-    const querySnapshot = await getDocs(fuelLogsCollection);
+    const fuelLogsCollection = collection(db, "fuelLogs");
+    const userQuery = query(
+      fuelLogsCollection,
+      where("userId", "==", auth.currentUser.uid)
+    );
+    const querySnapshot = await getDocs(userQuery);
 
     const logs: {
       userId: string;
@@ -47,18 +28,15 @@ export const getFuelLogs = async (): Promise<
       const data = doc.data();
       if (data) {
         logs.push({
-          userId: doc.id,
+          userId: data.userId || "",
           fuelStation: data.fuelStation || "Unknown",
-          date: data.date
-            ? data.date.toDate
-              ? data.date.toDate().toLocaleString("en-GB", {
+          date: data.date?.toDate
+            ? data.date.toDate().toLocaleString("en-GB", {
                 day: "2-digit",
                 month: "short",
                 year: "numeric",
               })
-              : data.date
-            : "Unknown",
-
+            : data.date || "Unknown",
           totalCost: data.totalCost || 0,
         });
       }
