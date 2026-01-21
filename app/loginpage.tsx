@@ -46,72 +46,73 @@ export default function LoginPage() {
       const normalizedUsername = trimmedUsername.toLowerCase();
       console.log("🔐 Attempting login for username:", normalizedUsername);
 
-      // Find user by username
+      let userEmailToSignIn = "";
+
+      // 1. Try Firestore Lookups first to support username-based login
       const usernameLowerQuery = query(
         collection(db, "users"),
         where("usernameLower", "==", normalizedUsername),
       );
       let userSnapshot = await getDocs(usernameLowerQuery);
-      console.log("📊 Found users:", userSnapshot.size);
+
+      if (userSnapshot.empty) {
+        const emailQuery = query(
+          collection(db, "users"),
+          where("email", "==", trimmedUsername),
+        );
+        userSnapshot = await getDocs(emailQuery);
+      }
 
       if (userSnapshot.empty) {
         const legacyUsernameQuery = query(
           collection(db, "users"),
-          where("username", "==", normalizedUsername),
+          where("username", "==", trimmedUsername),
         );
         userSnapshot = await getDocs(legacyUsernameQuery);
-        console.log("📊 Found users (legacy):", userSnapshot.size);
       }
 
-      if (userSnapshot.empty) {
-        console.log("❌ No user found with username:", normalizedUsername);
-        Alert.alert("Login Failed", "Invalid username or password");
-        return;
-      }
+      if (!userSnapshot.empty) {
+        const userDoc = userSnapshot.docs[0];
+        userEmailToSignIn = userDoc.data()?.email as string;
 
-      const userDoc = userSnapshot.docs[0];
-      const userEmail = userDoc.data()?.email as string | undefined;
-      console.log("✅ User found, email:", userEmail);
-
-      if (!userEmail) {
-        console.log("❌ No email found for user");
-        Alert.alert("Login Failed", "Unable to find an email for this user");
-        return;
-      }
-
-      // Sync username if needed
-      const storedUsername = userDoc.data()?.username as string | undefined;
-      if (!storedUsername || storedUsername !== trimmedUsername) {
-        try {
-          await updateDoc(doc(db, "users", userDoc.id), {
-            username: trimmedUsername,
-            usernameLower: normalizedUsername,
-          });
-        } catch (error) {
-          // non-blocking
+        // Sync username if needed
+        const storedUsername = userDoc.data()?.username as string | undefined;
+        if (!storedUsername || storedUsername !== trimmedUsername) {
+          try {
+            if (trimmedUsername.toLowerCase() !== userEmailToSignIn.toLowerCase()) {
+              await updateDoc(doc(db, "users", userDoc.id), {
+                username: trimmedUsername,
+                usernameLower: normalizedUsername,
+              });
+            }
+          } catch (e) { }
+        }
+      } else {
+        // 2. If Firestore lookup failed, but input looks like an email, try direct sign-in
+        if (trimmedUsername.includes("@") && trimmedUsername.includes(".")) {
+          userEmailToSignIn = trimmedUsername;
+        } else {
+          console.log("❌ No user found with identifier:", normalizedUsername);
+          Alert.alert("Login Failed", "Invalid username or password");
+          return;
         }
       }
 
-      // Check for Admin FIRST (using email)
-      if (userEmail.toLowerCase() === "admin@fuelmat.com") {
-        console.log("🔑 Admin detected, signing in...");
-        await signInWithEmailAndPassword(auth, userEmail, password);
-        setUsername("");
-        setPassword("");
-        console.log("✅ Admin login successful, navigating to admin panel");
-        router.replace("/(admin)" as any);
-        return;
-      }
-
-      // Sign in for regular users
-      console.log("🔑 Regular user, signing in...");
-      await signInWithEmailAndPassword(auth, userEmail, password);
+      console.log("🔑 Attempting sign-in for:", userEmailToSignIn);
+      const userCredential = await signInWithEmailAndPassword(auth, userEmailToSignIn, password);
+      const user = userCredential.user;
 
       setUsername("");
       setPassword("");
 
-      console.log("✅ Login successful, navigating to home");
-      router.replace("/(tabs)");
+      // 3. Admin Redirect Logic
+      if (user.email?.toLowerCase() === "admin@fuelmate.com") {
+        console.log("✅ Admin login successful, navigating to admin panel");
+        router.replace("/(admin)" as any);
+      } else {
+        console.log("✅ Regular user login successful, navigating to home");
+        router.replace("/(tabs)");
+      }
     } catch (error: any) {
       console.error("❌ Login Error:", error.code, error.message);
       Alert.alert("Login Failed", "Invalid username or password");
