@@ -1,17 +1,76 @@
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Allow authenticated users (including anonymous) to read fuel logs
-    match /fuelLogs/{document=**} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
+
+    function isSignedIn() {
+      return request.auth != null;
     }
-    
-    // Add more collection rules as needed
+    function isSelf(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+
+    // Users
+    match /users/{userId} {
+      // Allow username availability checks during signup (unauthenticated read)
+      allow get, list: if true;
+      allow create: if isSelf(userId);               // create your own doc
+      allow read, update: if isSelf(userId);         // read/update your own doc
+      allow delete: if false;
+    }
+
+    // User vehicles subcollection
+    match /users/{userId}/vehicles/{vehicleId} {
+      allow read, write: if isSelf(userId);
+    }
+
+    // Fuel logs
+    match /fuelLogs/{logId} {
+      allow create, update, delete: if isSignedIn() &&
+        request.resource.data.userId == request.auth.uid;
+      allow read: if isSignedIn() &&
+        resource.data.userId == request.auth.uid;
+    }
+
+    // Fuel requests
+    match /fuelRequests/{reqId} {
+      allow create: if isSignedIn() &&
+        request.resource.data.userId == request.auth.uid;
+      allow read, update, delete: if isSignedIn() &&
+        resource.data.userId == request.auth.uid;
+    }
+
+    // Tasks
+    match /tasks/{taskId} {
+      allow create: if isSignedIn() &&
+        request.resource.data.userId == request.auth.uid;
+      allow read, update, delete: if isSignedIn() &&
+        resource.data.userId == request.auth.uid;
+    }
+
+    // Notifications
+    match /notifications/{notifId} {
+      allow create: if isSignedIn(); // e.g., system or server adds
+      allow read, update: if isSignedIn() &&
+        resource.data.recipientId == request.auth.uid;
+      allow delete: if false;
+    }
+
+    // Settings (read-only to clients)
+    match /settings/{settingId} {
+      allow read: if true;     // or isSignedIn()
+      allow write: if false;   // keep server/admin-only
+    }
+
+    // Admin logs (lock down unless you add an admin claim)
+    match /adminLogs/{logId} {
+      allow read, write: if false;
+    }
+
+    // Deny everything else by default
     match /{document=**} {
-      allow read, write: if request.auth != null;
+      allow read, write: if false;
     }
   }
 }
+

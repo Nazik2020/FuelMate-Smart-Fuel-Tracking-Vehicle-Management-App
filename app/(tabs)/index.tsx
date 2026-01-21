@@ -4,7 +4,9 @@ import Rectangle2 from "@/components/DashBoard Components/Rectangle2";
 import Rectangle3 from "@/components/DashBoard Components/Rectangle3";
 import DrawerMenu from "@/components/DrawerMenu";
 import { getBarChartData, getFuelLogs } from "@/config/HomeDashboard";
+import { useCurrentUserProfile } from "@/hooks/use-current-user-profile";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   ScrollView,
@@ -16,6 +18,8 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function HomeScreen() {
+  const router = useRouter();
+  const { displayName } = useCurrentUserProfile();
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [fuelLogs, setFuelLogs] = useState<
     { userId: string; fuelStation: string; date: string; totalCost: number }[]
@@ -49,10 +53,15 @@ export default function HomeScreen() {
             </TouchableOpacity>
             <View>
               <Text style={styles.title}>Dashboard</Text>
-              <Text style={styles.subtitle}>Welcome, Alex</Text>
+              <Text style={styles.subtitle}>
+                {displayName ? `Welcome, ${displayName}` : "Welcome"}
+              </Text>
             </View>
           </View>
-          <TouchableOpacity style={styles.profileButton}>
+          <TouchableOpacity
+            style={styles.profileButton}
+            onPress={() => router.push("/profile")}
+          >
             <Ionicons name="person-outline" size={24} color="#1F2937" />
           </TouchableOpacity>
         </View>

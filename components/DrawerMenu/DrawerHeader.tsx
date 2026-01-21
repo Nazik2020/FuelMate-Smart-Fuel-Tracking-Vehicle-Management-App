@@ -4,22 +4,46 @@ import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 interface DrawerHeaderProps {
   onClose: () => void;
+  name?: string | null;
+  email?: string | null;
+  onProfilePress?: () => void;
 }
 
-export default function DrawerHeader({ onClose }: DrawerHeaderProps) {
+const resolveDisplayValue = (value?: string | null, fallback?: string) => {
+  if (typeof value !== "string") {
+    return fallback ?? "";
+  }
+
+  const trimmed = value.trim();
+  return trimmed.length ? trimmed : (fallback ?? "");
+};
+
+export default function DrawerHeader({
+  onClose,
+  name,
+  email,
+  onProfilePress,
+}: DrawerHeaderProps) {
+  const displayName = resolveDisplayValue(name, "Your Profile");
+  const displayEmail = resolveDisplayValue(email, "Add your email");
+
   return (
     <View style={styles.header}>
       <TouchableOpacity style={styles.closeButton} onPress={onClose}>
         <Ionicons name="close" size={24} color="#FFFFFF" />
       </TouchableOpacity>
 
-      <View style={styles.profileSection}>
+      <TouchableOpacity
+        style={styles.profileSection}
+        onPress={onProfilePress}
+        activeOpacity={onProfilePress ? 0.85 : 1}
+      >
         <View style={styles.profileIcon}>
           <Ionicons name="person" size={40} color="#0D7377" />
         </View>
-        <Text style={styles.profileName}>Alex Johnson</Text>
-        <Text style={styles.profileEmail}>alex@email.com</Text>
-      </View>
+        <Text style={styles.profileName}>{displayName}</Text>
+        <Text style={styles.profileEmail}>{displayEmail}</Text>
+      </TouchableOpacity>
     </View>
   );
 }

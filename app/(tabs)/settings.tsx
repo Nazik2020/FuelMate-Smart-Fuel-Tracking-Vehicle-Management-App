@@ -6,11 +6,22 @@ import {
   SettingsSection,
   SettingsToggle,
 } from "@/components/Settings";
+import { auth } from "@/config/firebase";
 import { Colors } from "@/constants/theme";
 import { useRouter } from "expo-router";
+import { signOut } from "firebase/auth";
 import React, { useState } from "react";
-import { Alert, ScrollView, StyleSheet } from "react-native";
+import { Alert, Platform, ScrollView, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+const confirmOnWeb = (message: string) => {
+  const confirmFn = (globalThis as { confirm?: (msg?: string) => boolean })
+    ?.confirm;
+  if (typeof confirmFn !== "function") {
+    return true;
+  }
+  return confirmFn(message);
+};
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -36,6 +47,34 @@ export default function SettingsScreen() {
 
   const handleAboutPress = () => {
     Alert.alert("About Us", "FuelMate App v1.0.0");
+  };
+
+  const performLogout = async () => {
+    try {
+      await signOut(auth);
+    } catch (err) {
+      console.warn("Sign-out failed", err);
+    }
+    router.replace("/loginpage");
+  };
+
+  const handleLogout = () => {
+    if (Platform.OS === "web") {
+      const confirmed = confirmOnWeb("Do you want to log out?");
+      if (confirmed) {
+        performLogout();
+      }
+      return;
+    }
+
+    Alert.alert("Log out", "Do you want to log out?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Log out",
+        style: "destructive",
+        onPress: performLogout,
+      },
+    ]);
   };
 
   return (
@@ -120,6 +159,13 @@ export default function SettingsScreen() {
             title="About Us"
             subtitle="App version 1.0.0"
             onPress={handleAboutPress}
+          />
+          <SettingsItem
+            icon="log-out-outline"
+            iconColor={Colors.error}
+            iconBackground={Colors.error + "20"}
+            title="Log out"
+            onPress={handleLogout}
             isLast
           />
         </SettingsSection>
