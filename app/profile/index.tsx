@@ -8,6 +8,7 @@ import { Colors } from "@/constants/theme";
 import { useCurrentUserProfile } from "@/hooks/use-current-user-profile";
 import { useRouter } from "expo-router";
 import React, { useMemo } from "react";
+import { auth } from "@/config/firebase";
 import { ScrollView, StatusBar, StyleSheet, View } from "react-native";
 
 const mockVehicles: Vehicle[] = [

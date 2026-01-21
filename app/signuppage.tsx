@@ -145,7 +145,7 @@ export default function SignupPage() {
         >
           {/* Logo */}
           <Image
-            source={require("@/assets/images/fuletrackerlogo.png")}
+            source={require("../assets/images/fuletrackerlogo.png")}
             style={styles.logo}
           />
 
@@ -375,38 +375,5 @@ const styles = StyleSheet.create({
   loginLinkButton: {
     color: "#ffffff",
     fontWeight: "700",
-  },
-  signupwithgooglebutton: {
-    width: "100%",
-    height: 50,
-    backgroundColor: "#fff",
-    borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: 20,
-    flexDirection: "row",
-  },
-  signupwithgooglebuttontext: {
-    color: "#000",
-    fontSize: 16,
-    fontWeight: "600",
-    marginLeft: 7,
-  },
-  dividerContainer: {
-    flexDirection: "row",
-    width: "100%",
-    alignItems: "center",
-    marginTop: 20,
-  },
-  line: {
-    flex: 1,
-    height: 1.5,
-    backgroundColor: "#FFFFFF",
-  },
-  dividerText: {
-    marginHorizontal: 10,
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "600",
   },
 });

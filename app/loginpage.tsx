@@ -13,11 +13,12 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { auth, db } from "@/config/firebase"; // adjust if your path differs
+import { auth, db } from "@/config/firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import {
   collection,
   doc,
+  getDoc,
   getDocs,
   query,
   updateDoc,
@@ -43,7 +44,11 @@ export default function LoginPage() {
     try {
       const trimmedUsername = username.trim();
       const normalizedUsername = trimmedUsername.toLowerCase();
+      console.log("🔐 Attempting login for username:", normalizedUsername);
 
+      let userEmailToSignIn = "";
+
+      // 1. Try Firestore Lookups first to support username-based login
       const usernameLowerQuery = query(
         collection(db, "users"),
         where("usernameLower", "==", normalizedUsername),
@@ -51,45 +56,65 @@ export default function LoginPage() {
       let userSnapshot = await getDocs(usernameLowerQuery);
 
       if (userSnapshot.empty) {
+        const emailQuery = query(
+          collection(db, "users"),
+          where("email", "==", trimmedUsername),
+        );
+        userSnapshot = await getDocs(emailQuery);
+      }
+
+      if (userSnapshot.empty) {
         const legacyUsernameQuery = query(
           collection(db, "users"),
-          where("username", "==", normalizedUsername),
+          where("username", "==", trimmedUsername),
         );
         userSnapshot = await getDocs(legacyUsernameQuery);
       }
 
-      if (userSnapshot.empty) {
-        Alert.alert("Login Failed", "Invalid username or password");
-        return;
-      }
+      if (!userSnapshot.empty) {
+        const userDoc = userSnapshot.docs[0];
+        userEmailToSignIn = userDoc.data()?.email as string;
 
-      const userDoc = userSnapshot.docs[0];
-      const userEmail = userDoc.data()?.email as string | undefined;
-
-      if (!userEmail) {
-        Alert.alert("Login Failed", "Unable to find an email for this user");
-        return;
-      }
-
-      const storedUsername = userDoc.data()?.username as string | undefined;
-      if (!storedUsername || storedUsername !== trimmedUsername) {
-        try {
-          await updateDoc(doc(db, "users", userDoc.id), {
-            username: trimmedUsername,
-            usernameLower: normalizedUsername,
-          });
-        } catch (error) {
-          // non-blocking; authentication should proceed even if this fails
+        // Sync username if needed
+        const storedUsername = userDoc.data()?.username as string | undefined;
+        if (!storedUsername || storedUsername !== trimmedUsername) {
+          try {
+            if (trimmedUsername.toLowerCase() !== userEmailToSignIn.toLowerCase()) {
+              await updateDoc(doc(db, "users", userDoc.id), {
+                username: trimmedUsername,
+                usernameLower: normalizedUsername,
+              });
+            }
+          } catch (e) { }
+        }
+      } else {
+        // 2. If Firestore lookup failed, but input looks like an email, try direct sign-in
+        if (trimmedUsername.includes("@") && trimmedUsername.includes(".")) {
+          userEmailToSignIn = trimmedUsername;
+        } else {
+          console.log("❌ No user found with identifier:", normalizedUsername);
+          Alert.alert("Login Failed", "Invalid username or password");
+          return;
         }
       }
 
-      await signInWithEmailAndPassword(auth, userEmail, password);
+      console.log("🔑 Attempting sign-in for:", userEmailToSignIn);
+      const userCredential = await signInWithEmailAndPassword(auth, userEmailToSignIn, password);
+      const user = userCredential.user;
 
       setUsername("");
       setPassword("");
 
-      router.replace("/(tabs)");
+      // 3. Admin Redirect Logic
+      if (user.email?.toLowerCase() === "admin@fuelmate.com") {
+        console.log("✅ Admin login successful, navigating to admin panel");
+        router.replace("/(admin)" as any);
+      } else {
+        console.log("✅ Regular user login successful, navigating to home");
+        router.replace("/(tabs)");
+      }
     } catch (error: any) {
+      console.error("❌ Login Error:", error.code, error.message);
       Alert.alert("Login Failed", "Invalid username or password");
     }
   };
