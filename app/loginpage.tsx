@@ -44,6 +44,7 @@ export default function LoginPage() {
     try {
       const trimmedUsername = username.trim();
       const normalizedUsername = trimmedUsername.toLowerCase();
+      console.log("🔐 Attempting login for username:", normalizedUsername);
 
       // Find user by username
       const usernameLowerQuery = query(
@@ -51,6 +52,7 @@ export default function LoginPage() {
         where("usernameLower", "==", normalizedUsername),
       );
       let userSnapshot = await getDocs(usernameLowerQuery);
+      console.log("📊 Found users:", userSnapshot.size);
 
       if (userSnapshot.empty) {
         const legacyUsernameQuery = query(
@@ -58,17 +60,21 @@ export default function LoginPage() {
           where("username", "==", normalizedUsername),
         );
         userSnapshot = await getDocs(legacyUsernameQuery);
+        console.log("📊 Found users (legacy):", userSnapshot.size);
       }
 
       if (userSnapshot.empty) {
+        console.log("❌ No user found with username:", normalizedUsername);
         Alert.alert("Login Failed", "Invalid username or password");
         return;
       }
 
       const userDoc = userSnapshot.docs[0];
       const userEmail = userDoc.data()?.email as string | undefined;
+      console.log("✅ User found, email:", userEmail);
 
       if (!userEmail) {
+        console.log("❌ No email found for user");
         Alert.alert("Login Failed", "Unable to find an email for this user");
         return;
       }
@@ -88,22 +94,26 @@ export default function LoginPage() {
 
       // Check for Admin FIRST (using email)
       if (userEmail.toLowerCase() === "admin@fuelmat.com") {
+        console.log("🔑 Admin detected, signing in...");
         await signInWithEmailAndPassword(auth, userEmail, password);
         setUsername("");
         setPassword("");
+        console.log("✅ Admin login successful, navigating to admin panel");
         router.replace("/(admin)" as any);
         return;
       }
 
       // Sign in for regular users
+      console.log("🔑 Regular user, signing in...");
       await signInWithEmailAndPassword(auth, userEmail, password);
 
       setUsername("");
       setPassword("");
 
+      console.log("✅ Login successful, navigating to home");
       router.replace("/(tabs)");
     } catch (error: any) {
-      console.error("Login Error:", error.code, error.message);
+      console.error("❌ Login Error:", error.code, error.message);
       Alert.alert("Login Failed", "Invalid username or password");
     }
   };
