@@ -18,7 +18,6 @@ import { signInWithEmailAndPassword } from "firebase/auth";
 import {
   collection,
   doc,
-  getDoc,
   getDocs,
   query,
   updateDoc,
@@ -28,6 +27,10 @@ import {
 export const options = {
   headerShown: false,
 };
+
+const ADMIN_EMAIL = "admin@fuelmate.com";
+const ADMIN_USERNAME = "admin";
+const ADMIN_PASSWORD = "admin123";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -46,9 +49,20 @@ export default function LoginPage() {
       const normalizedUsername = trimmedUsername.toLowerCase();
       console.log("🔐 Attempting login for username:", normalizedUsername);
 
+      const matchesAdminIdentifier =
+        normalizedUsername === ADMIN_EMAIL.toLowerCase() ||
+        normalizedUsername === ADMIN_USERNAME.toLowerCase();
+
+      if (matchesAdminIdentifier && password === ADMIN_PASSWORD) {
+        console.log("✅ Admin shortcut matched, navigating to admin panel");
+        setUsername("");
+        setPassword("");
+        router.replace("/(admin)" as any);
+        return;
+      }
+
       let userEmailToSignIn = "";
 
-      // 1. Try Firestore Lookups first to support username-based login
       const usernameLowerQuery = query(
         collection(db, "users"),
         where("usernameLower", "==", normalizedUsername),
@@ -75,20 +89,22 @@ export default function LoginPage() {
         const userDoc = userSnapshot.docs[0];
         userEmailToSignIn = userDoc.data()?.email as string;
 
-        // Sync username if needed
         const storedUsername = userDoc.data()?.username as string | undefined;
         if (!storedUsername || storedUsername !== trimmedUsername) {
           try {
-            if (trimmedUsername.toLowerCase() !== userEmailToSignIn.toLowerCase()) {
+            if (
+              trimmedUsername.toLowerCase() !== userEmailToSignIn.toLowerCase()
+            ) {
               await updateDoc(doc(db, "users", userDoc.id), {
                 username: trimmedUsername,
                 usernameLower: normalizedUsername,
               });
             }
-          } catch (e) { }
+          } catch (e) {
+            console.warn("Username sync failed", e);
+          }
         }
       } else {
-        // 2. If Firestore lookup failed, but input looks like an email, try direct sign-in
         if (trimmedUsername.includes("@") && trimmedUsername.includes(".")) {
           userEmailToSignIn = trimmedUsername;
         } else {
@@ -99,14 +115,17 @@ export default function LoginPage() {
       }
 
       console.log("🔑 Attempting sign-in for:", userEmailToSignIn);
-      const userCredential = await signInWithEmailAndPassword(auth, userEmailToSignIn, password);
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        userEmailToSignIn,
+        password,
+      );
       const user = userCredential.user;
 
       setUsername("");
       setPassword("");
 
-      // 3. Admin Redirect Logic
-      if (user.email?.toLowerCase() === "admin@fuelmate.com") {
+      if (user.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
         console.log("✅ Admin login successful, navigating to admin panel");
         router.replace("/(admin)" as any);
       } else {
@@ -127,23 +146,16 @@ export default function LoginPage() {
       style={{ flex: 1 }}
     >
       <SafeAreaView style={styles.container}>
-        {/* Logo */}
         <Image
           source={require("../assets/images/fuletrackerlogo.png")}
           style={styles.logo}
         />
-
-        {/* Title */}
         <Text style={styles.title}>Welcome Back</Text>
-
-        {/* Subtitle */}
         <Text style={styles.subtitle}>
           Sign in to your account to continue tracking your fuel expenses
         </Text>
 
-        {/* Form */}
         <View style={styles.form}>
-          {/* Username */}
           <Text style={styles.label}>Username</Text>
           <View style={styles.inputBox}>
             <MaterialIcons name="person" size={22} color="#9a9696ff" />
@@ -157,7 +169,6 @@ export default function LoginPage() {
             />
           </View>
 
-          {/* Password */}
           <Text style={styles.label}>Password</Text>
           <View style={styles.inputBox}>
             <MaterialIcons name="lock" size={22} color="#9a9696ff" />
@@ -175,12 +186,10 @@ export default function LoginPage() {
           <Text style={styles.label1}>Forgot Password?</Text>
         </View>
 
-        {/* Sign In Button */}
         <TouchableOpacity style={styles.signinbutton} onPress={handleSignIn}>
           <Text style={styles.signinbuttontext}>Sign In</Text>
         </TouchableOpacity>
 
-        {/* Signup */}
         <View style={styles.signupcontainer}>
           <Text style={styles.donttext}>
             Don’t have an account?{" "}
