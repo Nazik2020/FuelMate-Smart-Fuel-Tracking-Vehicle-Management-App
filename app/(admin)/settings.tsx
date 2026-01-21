@@ -111,7 +111,6 @@ export default function AdminSettings() {
   const [isModalVisible, setModalVisible] = useState(false);
   const [isNotifModalVisible, setNotifModalVisible] = useState(false);
 
-  // Notification States
   const [notifData, setNotifData] = useState({
     recipient: "Search",
     title: "",
@@ -120,7 +119,6 @@ export default function AdminSettings() {
 
   const [activeFilter, setActiveFilter] = useState("All Users");
 
-  // Fuel Price States
   const [prices, setPrices] = useState({
     petrol92: "355.00",
     petrol95: "395.00",
@@ -173,7 +171,6 @@ export default function AdminSettings() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
-      {/* Header */}
       <View style={styles.header}>
         <View>
           <Text style={styles.headerTitle}>Admin Settings</Text>
@@ -239,7 +236,6 @@ export default function AdminSettings() {
         />
       </ScrollView>
 
-      {/* Fuel Price Modal */}
       <Modal
         visible={isModalVisible}
         transparent={true}
@@ -303,7 +299,6 @@ export default function AdminSettings() {
         </View>
       </Modal>
 
-      {/* Compose Notification Modal */}
       <Modal
         visible={isNotifModalVisible}
         transparent={true}
@@ -324,7 +319,6 @@ export default function AdminSettings() {
 
             <ScrollView showsVerticalScrollIndicator={false}>
               <View style={styles.form}>
-                {/* Recipient */}
                 <View style={styles.inputGroup}>
                   <Text style={styles.inputLabel}>Recipient</Text>
                   <View style={styles.dropdownInput}>
@@ -350,7 +344,6 @@ export default function AdminSettings() {
                   </View>
                 </View>
 
-                {/* Filter Chips */}
                 <View style={styles.chipRow}>
                   <TouchableOpacity
                     style={[
@@ -378,7 +371,10 @@ export default function AdminSettings() {
                     ]}
                     onPress={() => {
                       setActiveFilter("Active Users");
-                      setNotifData({ ...notifData, recipient: "Active Users" });
+                      setNotifData({
+                        ...notifData,
+                        recipient: "Active Users",
+                      });
                     }}
                   >
                     <Text
@@ -393,7 +389,6 @@ export default function AdminSettings() {
                   </TouchableOpacity>
                 </View>
 
-                {/* Title */}
                 <View style={styles.inputGroup}>
                   <Text style={styles.inputLabel}>Notification Title</Text>
                   <View style={styles.inputWrapper}>
@@ -409,7 +404,6 @@ export default function AdminSettings() {
                   </View>
                 </View>
 
-                {/* Message */}
                 <View style={styles.inputGroup}>
                   <Text style={styles.inputLabel}>Message</Text>
                   <View

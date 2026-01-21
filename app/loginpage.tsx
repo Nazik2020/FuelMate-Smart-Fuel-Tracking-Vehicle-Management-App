@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { auth, db } from "@/config/firebase"; // adjust if your path differs
+import { auth, db } from "@/config/firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import {
   collection,
@@ -47,9 +47,8 @@ export default function LoginPage() {
     try {
       const trimmedUsername = username.trim();
       const normalizedUsername = trimmedUsername.toLowerCase();
+      console.log("🔐 Attempting login for username:", normalizedUsername);
 
-<<<<<<< Updated upstream
-=======
       const matchesAdminIdentifier =
         normalizedUsername === ADMIN_EMAIL.toLowerCase() ||
         normalizedUsername === ADMIN_USERNAME.toLowerCase();
@@ -64,8 +63,6 @@ export default function LoginPage() {
 
       let userEmailToSignIn = "";
 
-      // 1. Try Firestore Lookups first to support username-based login
->>>>>>> Stashed changes
       const usernameLowerQuery = query(
         collection(db, "users"),
         where("usernameLower", "==", normalizedUsername),
@@ -73,42 +70,25 @@ export default function LoginPage() {
       let userSnapshot = await getDocs(usernameLowerQuery);
 
       if (userSnapshot.empty) {
+        const emailQuery = query(
+          collection(db, "users"),
+          where("email", "==", trimmedUsername),
+        );
+        userSnapshot = await getDocs(emailQuery);
+      }
+
+      if (userSnapshot.empty) {
         const legacyUsernameQuery = query(
           collection(db, "users"),
-          where("username", "==", normalizedUsername),
+          where("username", "==", trimmedUsername),
         );
         userSnapshot = await getDocs(legacyUsernameQuery);
       }
 
-      if (userSnapshot.empty) {
-        Alert.alert("Login Failed", "Invalid username or password");
-        return;
-      }
+      if (!userSnapshot.empty) {
+        const userDoc = userSnapshot.docs[0];
+        userEmailToSignIn = userDoc.data()?.email as string;
 
-<<<<<<< Updated upstream
-      const userDoc = userSnapshot.docs[0];
-      const userEmail = userDoc.data()?.email as string | undefined;
-
-      if (!userEmail) {
-        Alert.alert("Login Failed", "Unable to find an email for this user");
-        return;
-      }
-
-      const storedUsername = userDoc.data()?.username as string | undefined;
-      if (!storedUsername || storedUsername !== trimmedUsername) {
-        try {
-          await updateDoc(doc(db, "users", userDoc.id), {
-            username: trimmedUsername,
-            usernameLower: normalizedUsername,
-          });
-        } catch (error) {
-          // non-blocking; authentication should proceed even if this fails
-        }
-      }
-
-      await signInWithEmailAndPassword(auth, userEmail, password);
-=======
-        // Sync username if needed
         const storedUsername = userDoc.data()?.username as string | undefined;
         if (!storedUsername || storedUsername !== trimmedUsername) {
           try {
@@ -120,10 +100,11 @@ export default function LoginPage() {
                 usernameLower: normalizedUsername,
               });
             }
-          } catch (e) {}
+          } catch (e) {
+            console.warn("Username sync failed", e);
+          }
         }
       } else {
-        // 2. If Firestore lookup failed, but input looks like an email, try direct sign-in
         if (trimmedUsername.includes("@") && trimmedUsername.includes(".")) {
           userEmailToSignIn = trimmedUsername;
         } else {
@@ -140,15 +121,10 @@ export default function LoginPage() {
         password,
       );
       const user = userCredential.user;
->>>>>>> Stashed changes
 
       setUsername("");
       setPassword("");
 
-<<<<<<< Updated upstream
-      router.replace("/(tabs)");
-=======
-      // 3. Admin Redirect Logic
       if (user.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
         console.log("✅ Admin login successful, navigating to admin panel");
         router.replace("/(admin)" as any);
@@ -156,8 +132,8 @@ export default function LoginPage() {
         console.log("✅ Regular user login successful, navigating to home");
         router.replace("/(tabs)");
       }
->>>>>>> Stashed changes
     } catch (error: any) {
+      console.error("❌ Login Error:", error.code, error.message);
       Alert.alert("Login Failed", "Invalid username or password");
     }
   };
@@ -170,23 +146,16 @@ export default function LoginPage() {
       style={{ flex: 1 }}
     >
       <SafeAreaView style={styles.container}>
-        {/* Logo */}
         <Image
           source={require("../assets/images/fuletrackerlogo.png")}
           style={styles.logo}
         />
-
-        {/* Title */}
         <Text style={styles.title}>Welcome Back</Text>
-
-        {/* Subtitle */}
         <Text style={styles.subtitle}>
           Sign in to your account to continue tracking your fuel expenses
         </Text>
 
-        {/* Form */}
         <View style={styles.form}>
-          {/* Username */}
           <Text style={styles.label}>Username</Text>
           <View style={styles.inputBox}>
             <MaterialIcons name="person" size={22} color="#9a9696ff" />
@@ -200,7 +169,6 @@ export default function LoginPage() {
             />
           </View>
 
-          {/* Password */}
           <Text style={styles.label}>Password</Text>
           <View style={styles.inputBox}>
             <MaterialIcons name="lock" size={22} color="#9a9696ff" />
@@ -218,12 +186,10 @@ export default function LoginPage() {
           <Text style={styles.label1}>Forgot Password?</Text>
         </View>
 
-        {/* Sign In Button */}
         <TouchableOpacity style={styles.signinbutton} onPress={handleSignIn}>
           <Text style={styles.signinbuttontext}>Sign In</Text>
         </TouchableOpacity>
 
-        {/* Signup */}
         <View style={styles.signupcontainer}>
           <Text style={styles.donttext}>
             Don’t have an account?{" "}
