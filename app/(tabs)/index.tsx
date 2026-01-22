@@ -19,13 +19,22 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { auth } from "@/config/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 
+/* ================= TYPES ================= */
+
 type FuelLog = {
   id: string;
   userId: string;
   fuelStation: string;
   date: string;
   totalCost: number;
+  fuelLiters: number; // default 0 if missing
+  odometer: number;   // default 0 if missing
 };
+
+const MONTHS = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+];
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -33,9 +42,16 @@ export default function HomeScreen() {
 
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [fuelLogs, setFuelLogs] = useState<FuelLog[]>([]);
-  const [chartData, setChartData] = useState<
-    { label: string; value: number }[]
-  >([]);
+  const [chartData, setChartData] = useState<{ label: string; value: number }[]>(
+    []
+  );
+
+  const [thisMonthTotal, setThisMonthTotal] = useState(0);
+  const [lastMonthTotal, setLastMonthTotal] = useState(0);
+  const [lastFillText, setLastFillText] = useState("No data");
+  const [avgEfficiency, setAvgEfficiency] = useState("N/A");
+
+  /* ================= AUTH + DATA ================= */
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -46,7 +62,19 @@ export default function HomeScreen() {
 
       try {
         const logs = await getFuelLogs(user.uid);
-        setFuelLogs(logs);
+
+        // Map logs to include default fuelLiters and odometer
+        const formattedLogs: FuelLog[] = logs.map((log) => ({
+          id: log.id,
+          userId: log.userId,
+          fuelStation: log.fuelStation,
+          date: log.date,
+          totalCost: log.totalCost,
+          fuelLiters: 0 ?? 0,
+          odometer: 0 ?? 0,
+        }));
+
+        setFuelLogs(formattedLogs);
       } catch (error) {
         console.error("Error fetching fuel logs:", error);
       }
@@ -54,6 +82,115 @@ export default function HomeScreen() {
 
     return unsubscribe;
   }, []);
+
+  /* ================= MONTHLY CHART ================= */
+
+  useEffect(() => {
+    const monthlyTotals = Array(12).fill(0);
+
+    fuelLogs.forEach((log) => {
+      const dateObj = new Date(log.date);
+      const monthIndex = dateObj.getMonth();
+      monthlyTotals[monthIndex] += log.totalCost;
+    });
+
+    setChartData(
+      MONTHS.map((month, index) => ({
+        label: month,
+        value: monthlyTotals[index],
+      }))
+    );
+  }, [fuelLogs]);
+
+  /* ================= MONTH SPEND ================= */
+
+  useEffect(() => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    let thisMonth = 0;
+    let lastMonth = 0;
+
+    fuelLogs.forEach((log) => {
+      const d = new Date(log.date);
+      const m = d.getMonth();
+      const y = d.getFullYear();
+
+      if (y === currentYear && m === currentMonth) {
+        thisMonth += log.totalCost;
+      }
+
+      if (y === currentYear && m === currentMonth - 1) {
+        lastMonth += log.totalCost;
+      }
+    });
+
+    setThisMonthTotal(thisMonth);
+    setLastMonthTotal(lastMonth);
+  }, [fuelLogs]);
+
+  /* ================= LAST FILL ================= */
+
+  useEffect(() => {
+    if (fuelLogs.length === 0) {
+      setLastFillText("No fills yet");
+      return;
+    }
+
+    const latestLog = fuelLogs.reduce((latest, current) =>
+      new Date(current.date) > new Date(latest.date) ? current : latest
+    );
+
+    const lastDate = new Date(latestLog.date);
+    const now = new Date();
+
+    const diffDays = Math.abs(
+      Math.floor((now.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24))
+    );
+
+    if (diffDays === 0) setLastFillText("Today");
+    else if (diffDays === 1) setLastFillText("1 day ago");
+    else setLastFillText(`${diffDays} days ago`);
+  }, [fuelLogs]);
+
+  /* ================= AVERAGE EFFICIENCY ================= */
+
+  useEffect(() => {
+    if (fuelLogs.length < 2) {
+      setAvgEfficiency("N/A");
+      return;
+    }
+
+    const sortedLogs = [...fuelLogs].sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
+
+    let totalDistance = 0;
+    let totalFuel = 0;
+
+    for (let i = 1; i < sortedLogs.length; i++) {
+      const prev = sortedLogs[i - 1];
+      const curr = sortedLogs[i];
+
+      const distance = curr.odometer - prev.odometer;
+
+      if (distance <= 0 || curr.fuelLiters <= 0) continue;
+
+      totalDistance += distance;
+      totalFuel += curr.fuelLiters;
+    }
+
+    if (totalFuel === 0) {
+      setAvgEfficiency("N/A");
+      return;
+    }
+
+    const efficiency = totalDistance / totalFuel;
+    setAvgEfficiency(`${efficiency.toFixed(1)} km/L`);
+  }, [fuelLogs]);
+
+  /* ================= UI ================= */
 
   return (
     <SafeAreaView style={styles.container}>
@@ -83,30 +220,24 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Monthly Spend */}
         <View style={styles.placeholder}>
-          <CardMSpend />
+          <CardMSpend thisMonth={thisMonthTotal} lastMonth={lastMonthTotal} />
         </View>
 
-        {/* Small Cards */}
         <View style={styles.smallCardRow}>
           <View style={styles.Cformgroup}>
-            <Rectangle2 title="Average Efficiency" value="32.5 MPG" />
+            <Rectangle2 title="Average Efficiency" value={avgEfficiency} />
           </View>
           <View style={styles.Cformgroup}>
-            <Rectangle2 title="Last Fill" value="3 days ago" />
+            <Rectangle2 title="Last Fill" value={lastFillText} />
           </View>
         </View>
 
-        {/* Monthly Expense Chart */}
         <View style={styles.placeholder}>
           <CardMExpense data={chartData} />
         </View>
 
-        {/* Fuel Logs */}
-        <View>
-          <Text style={styles.text4}>Recent Fuel Logs</Text>
-        </View>
+        <Text style={styles.text4}>Recent Fuel Logs</Text>
 
         {fuelLogs.map((log) => (
           <View style={styles.placeholder} key={log.id}>
@@ -119,10 +250,7 @@ export default function HomeScreen() {
         ))}
       </ScrollView>
 
-      <DrawerMenu
-        visible={drawerVisible}
-        onClose={() => setDrawerVisible(false)}
-      />
+      <DrawerMenu visible={drawerVisible} onClose={() => setDrawerVisible(false)} />
     </SafeAreaView>
   );
 }
@@ -130,37 +258,18 @@ export default function HomeScreen() {
 /* ================= STYLES ================= */
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-  },
+  container: { flex: 1, backgroundColor: "#fff" },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
     paddingHorizontal: 20,
     paddingTop: 10,
     paddingBottom: 20,
   },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-  },
-  menuButton: {
-    marginRight: 12,
-    padding: 4,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#1F2937",
-  },
-  subtitle: {
-    fontSize: 16,
-    color: "#6B7280",
-    marginTop: 4,
-  },
+  headerLeft: { flexDirection: "row", alignItems: "center" },
+  menuButton: { marginRight: 12 },
+  title: { fontSize: 28, fontWeight: "bold" },
+  subtitle: { fontSize: 16, color: "#6B7280" },
   profileButton: {
     width: 40,
     height: 40,
@@ -169,30 +278,18 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  placeholder: {
-    margin: 10,
-    padding: 0,
-    backgroundColor: "#F3F4F6",
-    borderRadius: 12,
-  },
+  placeholder: { margin: 10, borderRadius: 12 },
   smallCardRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     paddingHorizontal: 20,
-    marginTop: 10,
   },
-  Cformgroup: {
-    width: "48%",
-    backgroundColor: "#F3F4F6",
-    borderRadius: 12,
-  },
+  Cformgroup: { width: "48%" },
   text4: {
     fontSize: 22,
     color: "#0d7377",
     fontWeight: "600",
-    lineHeight: 22,
     marginLeft: 20,
-    marginTop: 10,
-    marginBottom: 10,
+    marginVertical: 10,
   },
 });

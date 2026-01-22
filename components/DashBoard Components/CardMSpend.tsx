@@ -1,61 +1,45 @@
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 
+interface Props {
+  thisMonth: number;
+  lastMonth: number;
+}
 
-export default function CardMSpend() {
-
+export default function CardMSpend({ thisMonth, lastMonth }: Props) {
   return (
-
     <View style={styles.cardS}>
-
       <View style={styles.inner}>
-
         <Text style={styles.text}>This Month's Spend</Text>
-        <Text style={styles.text2}>$185.50</Text>
-        <Text style={styles.text}>vs.$172.30 last month</Text>
-
+        <Text style={styles.text2}>Rs {thisMonth.toFixed(2)}</Text>
+        <Text style={styles.text}>
+          vs. Rs {lastMonth.toFixed(2)} last month
+        </Text>
       </View>
-
     </View>
-
-
   );
-
 }
 
 const styles = StyleSheet.create({
-
   cardS: {
-    backgroundColor: "#E6F7F8", // Light teal background
-    borderRadius: 12,           // rounded
-    overflow: "hidden",
-    shadowColor: "#000",        // shadow
+    backgroundColor: "#E6F7F8",
+    borderRadius: 12,
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.1,
     shadowRadius: 6,
-    elevation: 4, // Android shadow
-    //marginVertical: 10,
-
+    elevation: 4,
   },
-
-  inner: {
-    padding: 14, // p-6
-  },
-
+  inner: { padding: 14 },
   text: {
     fontSize: 14,
-    color: "#4B5563", // Dark grey for label
-    lineHeight: 20,
+    color: "#4B5563",
     marginBottom: 8,
   },
-
   text2: {
     fontSize: 32,
-    color: "#0D7377", // Teal for primary amount
+    color: "#0D7377",
     fontWeight: "bold",
-    lineHeight: 38,
     marginBottom: 6,
   },
-
 });
-
