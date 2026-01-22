@@ -3,7 +3,7 @@ import CardMSpend from "@/components/DashBoard Components/CardMSpend";
 import Rectangle2 from "@/components/DashBoard Components/Rectangle2";
 import Rectangle3 from "@/components/DashBoard Components/Rectangle3";
 import DrawerMenu from "@/components/DrawerMenu";
-import { getBarChartData, getFuelLogs } from "@/config/HomeDashboard";
+import { getFuelLogs } from "@/config/HomeDashboard";
 import { useCurrentUserProfile } from "@/hooks/use-current-user-profile";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -16,27 +16,43 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { auth } from "@/config/firebase";
+import { onAuthStateChanged } from "firebase/auth";
+
+type FuelLog = {
+  id: string;
+  userId: string;
+  fuelStation: string;
+  date: string;
+  totalCost: number;
+};
 
 export default function HomeScreen() {
   const router = useRouter();
   const { displayName } = useCurrentUserProfile();
+
   const [drawerVisible, setDrawerVisible] = useState(false);
-  const [fuelLogs, setFuelLogs] = useState<
-    { userId: string; fuelStation: string; date: string; totalCost: number }[]
-  >([]);
+  const [fuelLogs, setFuelLogs] = useState<FuelLog[]>([]);
   const [chartData, setChartData] = useState<
     { label: string; value: number }[]
   >([]);
 
   useEffect(() => {
-    const fetchData = async () => {
-      const logs = await getFuelLogs();
-      setFuelLogs(logs);
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        setFuelLogs([]);
+        return;
+      }
 
-      const bData = await getBarChartData();
-      setChartData(bData);
-    };
-    fetchData();
+      try {
+        const logs = await getFuelLogs(user.uid);
+        setFuelLogs(logs);
+      } catch (error) {
+        console.error("Error fetching fuel logs:", error);
+      }
+    });
+
+    return unsubscribe;
   }, []);
 
   return (
@@ -58,6 +74,7 @@ export default function HomeScreen() {
               </Text>
             </View>
           </View>
+
           <TouchableOpacity
             style={styles.profileButton}
             onPress={() => router.push("/profile")}
@@ -66,11 +83,12 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Placeholder content */}
+        {/* Monthly Spend */}
         <View style={styles.placeholder}>
           <CardMSpend />
         </View>
 
+        {/* Small Cards */}
         <View style={styles.smallCardRow}>
           <View style={styles.Cformgroup}>
             <Rectangle2 title="Average Efficiency" value="32.5 MPG" />
@@ -80,17 +98,18 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* Monthly Expense BarChart */}
+        {/* Monthly Expense Chart */}
         <View style={styles.placeholder}>
           <CardMExpense data={chartData} />
         </View>
 
-        {/* Recent Fuel Logs */}
+        {/* Fuel Logs */}
         <View>
           <Text style={styles.text4}>Recent Fuel Logs</Text>
         </View>
+
         {fuelLogs.map((log) => (
-          <View style={styles.placeholder} key={log.userId}>
+          <View style={styles.placeholder} key={log.id}>
             <Rectangle3
               name={log.fuelStation}
               value={`Rs ${log.totalCost}`}
@@ -99,6 +118,7 @@ export default function HomeScreen() {
           </View>
         ))}
       </ScrollView>
+
       <DrawerMenu
         visible={drawerVisible}
         onClose={() => setDrawerVisible(false)}
@@ -107,7 +127,8 @@ export default function HomeScreen() {
   );
 }
 
-// ===== Styles =====
+/* ================= STYLES ================= */
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -154,10 +175,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#F3F4F6",
     borderRadius: 12,
   },
-  placeholderText: {
-    color: "#6B7280",
-    fontSize: 16,
-  },
   smallCardRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -171,16 +188,11 @@ const styles = StyleSheet.create({
   },
   text4: {
     fontSize: 22,
-    color: "#0d7377", // Green color for title
+    color: "#0d7377",
     fontWeight: "600",
     lineHeight: 22,
     marginLeft: 20,
     marginTop: 10,
-    marginBottom: 10,
-  },
-
-  fuelLogContainer: {
-    marginHorizontal: 20,
     marginBottom: 10,
   },
 });
