@@ -16,8 +16,10 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+
 import { auth } from "@/config/firebase";
 import { onAuthStateChanged } from "firebase/auth";
+import { Colors } from "@/constants/theme";
 
 /* ================= TYPES ================= */
 
@@ -35,6 +37,10 @@ const MONTHS = [
   "Jan", "Feb", "Mar", "Apr", "May", "Jun",
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ];
+
+
+
+
 
 export default function HomeScreen() {
   const router = useRouter();

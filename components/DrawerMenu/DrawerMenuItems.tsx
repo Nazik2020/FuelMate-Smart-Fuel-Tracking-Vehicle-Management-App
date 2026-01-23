@@ -133,6 +133,11 @@ const styles = StyleSheet.create({
   menuItems: {
     paddingVertical: 20,
   },
+  item: {
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+  },
   menuItem: {
     flexDirection: "row",
     alignItems: "center",
