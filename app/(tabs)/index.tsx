@@ -27,8 +27,8 @@ type FuelLog = {
   fuelStation: string;
   date: string;
   totalCost: number;
-  fuelLiters: number; // default 0 if missing
-  odometer: number;   // default 0 if missing
+  fuelLiters: number;
+  distancekm: number;
 };
 
 const MONTHS = [
@@ -51,7 +51,7 @@ export default function HomeScreen() {
   const [lastFillText, setLastFillText] = useState("No data");
   const [avgEfficiency, setAvgEfficiency] = useState("N/A");
 
-  /* ================= AUTH + DATA ================= */
+  /* ================= FETCH LOGS ================= */
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -63,18 +63,20 @@ export default function HomeScreen() {
       try {
         const logs = await getFuelLogs(user.uid);
 
-        // Map logs to include default fuelLiters and odometer
-        const formattedLogs: FuelLog[] = logs.map((log) => ({
+        const normalizedLogs: FuelLog[] = logs.map((log: any) => ({
           id: log.id,
           userId: log.userId,
           fuelStation: log.fuelStation,
-          date: log.date,
-          totalCost: log.totalCost,
-          fuelLiters: 0 ?? 0,
-          odometer: 0 ?? 0,
+          date: log.date?.toDate
+            ? log.date.toDate().toISOString()
+            : log.date,
+          totalCost: log.totalCost != null ? Number(log.totalCost) : 0,
+          //  Safe conversion
+          fuelLiters: log.fuelLiters != null ? Number(log.fuelLiters) : 0,
+          distancekm: log.distancekm != null ? Number(log.distancekm) : 0,
         }));
 
-        setFuelLogs(formattedLogs);
+        setFuelLogs(normalizedLogs);
       } catch (error) {
         console.error("Error fetching fuel logs:", error);
       }
@@ -89,9 +91,8 @@ export default function HomeScreen() {
     const monthlyTotals = Array(12).fill(0);
 
     fuelLogs.forEach((log) => {
-      const dateObj = new Date(log.date);
-      const monthIndex = dateObj.getMonth();
-      monthlyTotals[monthIndex] += log.totalCost;
+      const d = new Date(log.date);
+      monthlyTotals[d.getMonth()] += log.totalCost;
     });
 
     setChartData(
@@ -102,7 +103,7 @@ export default function HomeScreen() {
     );
   }, [fuelLogs]);
 
-  /* ================= MONTH SPEND ================= */
+  /* ================= MONTHLY TOTALS ================= */
 
   useEffect(() => {
     const now = new Date();
@@ -114,14 +115,13 @@ export default function HomeScreen() {
 
     fuelLogs.forEach((log) => {
       const d = new Date(log.date);
-      const m = d.getMonth();
-      const y = d.getFullYear();
-
-      if (y === currentYear && m === currentMonth) {
+      if (d.getFullYear() === currentYear && d.getMonth() === currentMonth) {
         thisMonth += log.totalCost;
       }
-
-      if (y === currentYear && m === currentMonth - 1) {
+      if (
+        d.getFullYear() === currentYear &&
+        d.getMonth() === currentMonth - 1
+      ) {
         lastMonth += log.totalCost;
       }
     });
@@ -138,16 +138,12 @@ export default function HomeScreen() {
       return;
     }
 
-    const latestLog = fuelLogs.reduce((latest, current) =>
-      new Date(current.date) > new Date(latest.date) ? current : latest
+    const latestLog = fuelLogs.reduce((a, b) =>
+      new Date(a.date) > new Date(b.date) ? a : b
     );
 
-    const lastDate = new Date(latestLog.date);
-    const now = new Date();
-
-    const diffDays = Math.abs(
-      Math.floor((now.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24))
-    );
+    const diffTime = Math.abs(Date.now() - new Date(latestLog.date).getTime());
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
     if (diffDays === 0) setLastFillText("Today");
     else if (diffDays === 1) setLastFillText("1 day ago");
@@ -157,37 +153,27 @@ export default function HomeScreen() {
   /* ================= AVERAGE EFFICIENCY ================= */
 
   useEffect(() => {
-    if (fuelLogs.length < 2) {
+    if (fuelLogs.length === 0) {
       setAvgEfficiency("N/A");
       return;
     }
 
-    const sortedLogs = [...fuelLogs].sort(
-      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-    );
-
     let totalDistance = 0;
     let totalFuel = 0;
 
-    for (let i = 1; i < sortedLogs.length; i++) {
-      const prev = sortedLogs[i - 1];
-      const curr = sortedLogs[i];
-
-      const distance = curr.odometer - prev.odometer;
-
-      if (distance <= 0 || curr.fuelLiters <= 0) continue;
-
-      totalDistance += distance;
-      totalFuel += curr.fuelLiters;
-    }
+    fuelLogs.forEach((log) => {
+      if (!isNaN(log.distancekm) && !isNaN(log.fuelLiters)) {
+        totalDistance += log.distancekm;
+        totalFuel += log.fuelLiters;
+      }
+    });
 
     if (totalFuel === 0) {
       setAvgEfficiency("N/A");
       return;
     }
 
-    const efficiency = totalDistance / totalFuel;
-    setAvgEfficiency(`${efficiency.toFixed(1)} km/L`);
+    setAvgEfficiency(`${(totalDistance / totalFuel).toFixed(1)} km/L`);
   }, [fuelLogs]);
 
   /* ================= UI ================= */
@@ -195,7 +181,6 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             <TouchableOpacity
@@ -244,13 +229,16 @@ export default function HomeScreen() {
             <Rectangle3
               name={log.fuelStation}
               value={`Rs ${log.totalCost}`}
-              date={log.date}
+              date={log.date} // remains ISO string
             />
           </View>
         ))}
       </ScrollView>
 
-      <DrawerMenu visible={drawerVisible} onClose={() => setDrawerVisible(false)} />
+      <DrawerMenu
+        visible={drawerVisible}
+        onClose={() => setDrawerVisible(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -262,14 +250,15 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: 20,
     paddingTop: 10,
     paddingBottom: 20,
   },
-  headerLeft: { flexDirection: "row", alignItems: "center" },
-  menuButton: { marginRight: 12 },
-  title: { fontSize: 28, fontWeight: "bold" },
-  subtitle: { fontSize: 16, color: "#6B7280" },
+  headerLeft: { flexDirection: "row", alignItems: "center", flex: 1 },
+  menuButton: { marginRight: 12, padding: 4 },
+  title: { fontSize: 28, fontWeight: "bold", color: "#1F2937" },
+  subtitle: { fontSize: 16, color: "#6B7280", marginTop: 4 },
   profileButton: {
     width: 40,
     height: 40,
@@ -278,13 +267,22 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  placeholder: { margin: 10, borderRadius: 12 },
+  placeholder: {
+    margin: 10,
+    backgroundColor: "#F3F4F6",
+    borderRadius: 12,
+  },
   smallCardRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     paddingHorizontal: 20,
+    marginTop: 10,
   },
-  Cformgroup: { width: "48%" },
+  Cformgroup: {
+    width: "48%",
+    backgroundColor: "#F3F4F6",
+    borderRadius: 12,
+  },
   text4: {
     fontSize: 22,
     color: "#0d7377",
