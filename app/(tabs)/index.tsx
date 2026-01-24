@@ -3,7 +3,7 @@ import CardMSpend from "@/components/DashBoard Components/CardMSpend";
 import Rectangle2 from "@/components/DashBoard Components/Rectangle2";
 import Rectangle3 from "@/components/DashBoard Components/Rectangle3";
 import DrawerMenu from "@/components/DrawerMenu";
-import { getBarChartData, getFuelLogs } from "@/config/HomeDashboard";
+import { getFuelLogs } from "@/config/HomeDashboard";
 import { useCurrentUserProfile } from "@/hooks/use-current-user-profile";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -17,22 +17,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-<<<<<<< Updated upstream
 import { Colors } from "@/constants/theme";
-import { auth } from "@/config/firebase";
-
-export default function HomeScreen() {
-  const router = useRouter();
-  const { displayName } = useCurrentUserProfile();
-  const [drawerVisible, setDrawerVisible] = useState(false);
-  const [fuelLogs, setFuelLogs] = useState<
-    { userId: string; fuelStation: string; date: string; totalCost: number }[]
-  >([]);
-  const [chartData, setChartData] = useState<
-    { label: string; value: number }[]
-  >([]);
-=======
-
 import { auth } from "@/config/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 
@@ -69,31 +54,23 @@ export default function HomeScreen() {
 
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [fuelLogs, setFuelLogs] = useState<FuelLog[]>([]);
-  const [chartData, setChartData] = useState<
-    { label: string; value: number }[]
-  >([]);
-
+  const [chartData, setChartData] = useState<{ label: string; value: number }[]>(
+    []
+  );
   const [thisMonthTotal, setThisMonthTotal] = useState(0);
   const [lastMonthTotal, setLastMonthTotal] = useState(0);
   const [lastFillText, setLastFillText] = useState("No data");
   const [avgEfficiency, setAvgEfficiency] = useState("N/A");
 
   /* ================= FETCH LOGS ================= */
->>>>>>> Stashed changes
 
   useEffect(() => {
-    const fetchData = async () => {
-      const logs = await getFuelLogs();
-      setFuelLogs(logs);
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        setFuelLogs([]);
+        return;
+      }
 
-<<<<<<< Updated upstream
-      const bData = await getBarChartData();
-      setChartData(bData);
-    };
-    fetchData();
-  }, []);
-
-=======
       try {
         const logs = await getFuelLogs(user.uid);
 
@@ -101,9 +78,10 @@ export default function HomeScreen() {
           id: log.id,
           userId: log.userId,
           fuelStation: log.fuelStation,
-          date: log.date?.toDate ? log.date.toDate().toISOString() : log.date,
+          date: log.date?.toDate
+            ? log.date.toDate().toISOString()
+            : log.date,
           totalCost: log.totalCost != null ? Number(log.totalCost) : 0,
-          //  Safe conversion
           fuelLiters: log.fuelLiters != null ? Number(log.fuelLiters) : 0,
           distancekm: log.distancekm != null ? Number(log.distancekm) : 0,
         }));
@@ -131,7 +109,7 @@ export default function HomeScreen() {
       MONTHS.map((month, index) => ({
         label: month,
         value: monthlyTotals[index],
-      })),
+      }))
     );
   }, [fuelLogs]);
 
@@ -171,7 +149,7 @@ export default function HomeScreen() {
     }
 
     const latestLog = fuelLogs.reduce((a, b) =>
-      new Date(a.date) > new Date(b.date) ? a : b,
+      new Date(a.date) > new Date(b.date) ? a : b
     );
 
     const diffTime = Math.abs(Date.now() - new Date(latestLog.date).getTime());
@@ -210,11 +188,9 @@ export default function HomeScreen() {
 
   /* ================= UI ================= */
 
->>>>>>> Stashed changes
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             <TouchableOpacity
@@ -230,6 +206,7 @@ export default function HomeScreen() {
               </Text>
             </View>
           </View>
+
           <TouchableOpacity
             style={styles.profileButton}
             onPress={() => router.push("/profile")}
@@ -245,31 +222,27 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Placeholder content */}
         <View style={styles.placeholder}>
-          <CardMSpend />
+          <CardMSpend thisMonth={thisMonthTotal} lastMonth={lastMonthTotal} />
         </View>
 
         <View style={styles.smallCardRow}>
           <View style={styles.Cformgroup}>
-            <Rectangle2 title="Average Efficiency" value="32.5 MPG" />
+            <Rectangle2 title="Average Efficiency" value={avgEfficiency} />
           </View>
           <View style={styles.Cformgroup}>
-            <Rectangle2 title="Last Fill" value="3 days ago" />
+            <Rectangle2 title="Last Fill" value={lastFillText} />
           </View>
         </View>
 
-        {/* Monthly Expense BarChart */}
         <View style={styles.placeholder}>
           <CardMExpense data={chartData} />
         </View>
 
-        {/* Recent Fuel Logs */}
-        <View>
-          <Text style={styles.text4}>Recent Fuel Logs</Text>
-        </View>
+        <Text style={styles.text4}>Recent Fuel Logs</Text>
+
         {fuelLogs.map((log) => (
-          <View style={styles.placeholder} key={log.userId}>
+          <View style={styles.placeholder} key={log.id}>
             <Rectangle3
               name={log.fuelStation}
               value={`Rs ${log.totalCost}`}
@@ -278,6 +251,7 @@ export default function HomeScreen() {
           </View>
         ))}
       </ScrollView>
+
       <DrawerMenu
         visible={drawerVisible}
         onClose={() => setDrawerVisible(false)}
@@ -286,12 +260,10 @@ export default function HomeScreen() {
   );
 }
 
-// ===== Styles =====
+/* ================= STYLES ================= */
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-  },
+  container: { flex: 1, backgroundColor: "#fff" },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -300,25 +272,10 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     paddingBottom: 20,
   },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-  },
-  menuButton: {
-    marginRight: 12,
-    padding: 4,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#1F2937",
-  },
-  subtitle: {
-    fontSize: 16,
-    color: "#6B7280",
-    marginTop: 4,
-  },
+  headerLeft: { flexDirection: "row", alignItems: "center", flex: 1 },
+  menuButton: { marginRight: 12, padding: 4 },
+  title: { fontSize: 28, fontWeight: "bold", color: "#1F2937" },
+  subtitle: { fontSize: 16, color: "#6B7280", marginTop: 4 },
   profileButton: {
     width: 40,
     height: 40,
@@ -335,13 +292,8 @@ const styles = StyleSheet.create({
   },
   placeholder: {
     margin: 10,
-    padding: 0,
     backgroundColor: "#F3F4F6",
     borderRadius: 12,
-  },
-  placeholderText: {
-    color: "#6B7280",
-    fontSize: 16,
   },
   smallCardRow: {
     flexDirection: "row",
@@ -356,16 +308,9 @@ const styles = StyleSheet.create({
   },
   text4: {
     fontSize: 22,
-    color: "#0d7377", // Green color for title
+    color: "#0d7377",
     fontWeight: "600",
-    lineHeight: 22,
     marginLeft: 20,
-    marginTop: 10,
-    marginBottom: 10,
-  },
-
-  fuelLogContainer: {
-    marginHorizontal: 20,
-    marginBottom: 10,
+    marginVertical: 10,
   },
 });

@@ -1,102 +1,23 @@
-import { collection, getDocs, query, where } from "firebase/firestore";
-import { auth, db } from "./firebase";
+import { collection, query, where, getDocs, Timestamp } from "firebase/firestore";
+import { db } from "./firebase";
 
-// ----------------- Fetch fuel logs -----------------
-export const getFuelLogs = async (): Promise<
-  { userId: string; fuelStation: string; date: string; totalCost: number }[]
-> => {
-  try {
-    if (!auth.currentUser) {
-      console.warn("Skipping fuel logs fetch: user not authenticated");
-      return [];
-    }
+export const getFuelLogs = async (userId: string) => {
+  const logsRef = collection(db, "fuelLogs");
+  const q = query(logsRef, where("userId", "==", userId));
+  const snapshot = await getDocs(q);
 
-    const fuelLogsCollection = collection(db, "fuelLogs");
-    const userQuery = query(
-      fuelLogsCollection,
-      where("userId", "==", auth.currentUser.uid)
-    );
-    const querySnapshot = await getDocs(userQuery);
+  return snapshot.docs.map((doc) => {
+    const data = doc.data();
 
-    const logs: {
-      userId: string;
-      fuelStation: string;
-      date: string;
-      totalCost: number;
-    }[] = [];
-    querySnapshot.forEach((doc) => {
-      const data = doc.data();
-      if (data) {
-        logs.push({
-          userId: data.userId || "",
-          fuelStation: data.fuelStation || "Unknown",
-          date: data.date?.toDate
-            ? data.date.toDate().toLocaleString("en-GB", {
-                day: "2-digit",
-                month: "short",
-                year: "numeric",
-              })
-            : data.date || "Unknown",
-          totalCost: data.totalCost || 0,
-        });
-      }
-    });
-
-    // Sort logs by date descending (most recent first)
-    logs.sort(
-      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-    );
-
-    return logs;
-  } catch (error) {
-    console.error("Error fetching fuel logs:", error);
-    return [];
-  }
-};
-
-// ----------------- Prepare monthly bar chart data -----------------
-export const getBarChartData = async (): Promise<
-  { label: string; value: number }[]
-> => {
-  try {
-    const logs = await getFuelLogs();
-
-    const months = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
-    ];
-
-    const monthlyTotals: Record<string, number> = {};
-    months.forEach((m) => (monthlyTotals[m] = 0));
-
-    // Aggregate fuel amounts by month
-    logs.forEach((log) => {
-      const dateObj = new Date(log.date);
-      if (!isNaN(dateObj.getTime())) {
-        const monthName = months[dateObj.getMonth()];
-        monthlyTotals[monthName] += log.totalCost;
-      }
-    });
-
-    // Convert to array for BarChart
-    const chartData = months.map((m) => ({
-      label: m,
-      value: monthlyTotals[m],
-    }));
-
-    return chartData;
-  } catch (error) {
-    console.error("Error preparing bar chart data:", error);
-    return [];
-  }
+    return {
+      id: doc.id,
+      userId: data.userId,
+      fuelStation: data.fuelStation,
+      totalCost: data.totalCost,
+      date:
+        data.date instanceof Timestamp
+          ? data.date.toDate().toDateString()
+          :data.date ?? "Unknown date",
+    };
+  });
 };
