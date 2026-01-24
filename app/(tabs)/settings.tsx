@@ -8,6 +8,7 @@ import {
 } from "@/components/Settings";
 import { auth } from "@/config/firebase";
 import { Colors } from "@/constants/theme";
+import { useCurrentUserProfile } from "@/hooks/use-current-user-profile";
 import { useRouter } from "expo-router";
 import { signOut } from "firebase/auth";
 import React, { useState } from "react";
@@ -25,6 +26,7 @@ const confirmOnWeb = (message: string) => {
 
 export default function SettingsScreen() {
   const router = useRouter();
+  const { profile } = useCurrentUserProfile();
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [darkModeEnabled, setDarkModeEnabled] = useState(true);
@@ -83,6 +85,7 @@ export default function SettingsScreen() {
       <SettingsHeader
         title="Settings"
         subtitle="Manage your preferences"
+        photoURL={profile?.photoURL}
         onMenuPress={() => setDrawerVisible(true)}
         onProfilePress={handleProfilePress}
       />

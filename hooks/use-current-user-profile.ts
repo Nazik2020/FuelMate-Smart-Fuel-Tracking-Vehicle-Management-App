@@ -10,6 +10,7 @@ interface UserDocument {
   lastName?: string;
   email?: string;
   phone?: string;
+  photoURL?: string;
   createdAt?:
     | {
         toDate?: () => Date;

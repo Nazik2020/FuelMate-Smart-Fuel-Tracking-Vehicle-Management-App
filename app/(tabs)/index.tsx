@@ -9,6 +9,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
+  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -16,10 +17,9 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
+import { Colors } from "@/constants/theme";
 import { auth } from "@/config/firebase";
 import { onAuthStateChanged } from "firebase/auth";
-import { Colors } from "@/constants/theme";
 
 /* ================= TYPES ================= */
 
@@ -34,24 +34,29 @@ type FuelLog = {
 };
 
 const MONTHS = [
-  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
 ];
-
-
-
-
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { displayName } = useCurrentUserProfile();
+  const { displayName, profile } = useCurrentUserProfile();
 
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [fuelLogs, setFuelLogs] = useState<FuelLog[]>([]);
   const [chartData, setChartData] = useState<{ label: string; value: number }[]>(
     []
   );
-
   const [thisMonthTotal, setThisMonthTotal] = useState(0);
   const [lastMonthTotal, setLastMonthTotal] = useState(0);
   const [lastFillText, setLastFillText] = useState("No data");
@@ -77,7 +82,6 @@ export default function HomeScreen() {
             ? log.date.toDate().toISOString()
             : log.date,
           totalCost: log.totalCost != null ? Number(log.totalCost) : 0,
-          //  Safe conversion
           fuelLiters: log.fuelLiters != null ? Number(log.fuelLiters) : 0,
           distancekm: log.distancekm != null ? Number(log.distancekm) : 0,
         }));
@@ -207,7 +211,14 @@ export default function HomeScreen() {
             style={styles.profileButton}
             onPress={() => router.push("/profile")}
           >
-            <Ionicons name="person-outline" size={24} color="#1F2937" />
+            {profile?.photoURL ? (
+              <Image
+                source={{ uri: profile.photoURL }}
+                style={styles.profileImage}
+              />
+            ) : (
+              <Ionicons name="person-outline" size={24} color="#1F2937" />
+            )}
           </TouchableOpacity>
         </View>
 
@@ -235,7 +246,7 @@ export default function HomeScreen() {
             <Rectangle3
               name={log.fuelStation}
               value={`Rs ${log.totalCost}`}
-              date={log.date} // remains ISO string
+              date={log.date}
             />
           </View>
         ))}
@@ -272,6 +283,12 @@ const styles = StyleSheet.create({
     backgroundColor: "#F3F4F6",
     justifyContent: "center",
     alignItems: "center",
+    overflow: "hidden",
+  },
+  profileImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
   },
   placeholder: {
     margin: 10,

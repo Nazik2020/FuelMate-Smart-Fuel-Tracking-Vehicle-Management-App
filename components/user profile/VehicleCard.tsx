@@ -1,36 +1,31 @@
+import { Vehicle } from "@/config/vehicleService";
 import { Colors } from "@/constants/theme";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
-export interface Vehicle {
-  id: string;
-  name: string;
-  plate: string;
-  type: string;
-  fuel: string;
-  year: string;
+interface VehicleCardProps {
+  vehicle: Vehicle;
   onEdit?: () => void;
 }
 
-export function VehicleCard({
-  name,
-  plate,
-  type,
-  fuel,
-  year,
-  onEdit,
-}: Vehicle) {
+export function VehicleCard({ vehicle, onEdit }: VehicleCardProps) {
+  const { name, licensePlate, vehicleType, fuelType, year, photoURL } = vehicle;
+
   return (
     <View style={styles.card}>
       <View style={styles.headerRow}>
         <View style={styles.leftRow}>
           <View style={styles.iconBadge}>
-            <Ionicons name="car-outline" size={26} color={Colors.primary} />
+            {photoURL ? (
+              <Image source={{ uri: photoURL }} style={styles.vehicleImage} />
+            ) : (
+              <Ionicons name="car-outline" size={26} color={Colors.primary} />
+            )}
           </View>
           <View style={styles.titleBlock}>
             <Text style={styles.title}>{name}</Text>
-            <Text style={styles.plate}>{plate}</Text>
+            <Text style={styles.plate}>{licensePlate || "No plate"}</Text>
           </View>
         </View>
         <TouchableOpacity onPress={onEdit} accessibilityRole="button">
@@ -45,15 +40,15 @@ export function VehicleCard({
       <View style={styles.metaRow}>
         <View style={styles.metaItem}>
           <Text style={styles.metaLabel}>Type</Text>
-          <Text style={styles.metaValue}>{type}</Text>
+          <Text style={styles.metaValue}>{vehicleType || "N/A"}</Text>
         </View>
         <View style={styles.metaItem}>
           <Text style={styles.metaLabel}>Fuel</Text>
-          <Text style={styles.metaValue}>{fuel}</Text>
+          <Text style={styles.metaValue}>{fuelType || "N/A"}</Text>
         </View>
         <View style={styles.metaItem}>
           <Text style={styles.metaLabel}>Year</Text>
-          <Text style={styles.metaValue}>{year}</Text>
+          <Text style={styles.metaValue}>{year || "N/A"}</Text>
         </View>
       </View>
     </View>
@@ -91,6 +86,12 @@ const styles = StyleSheet.create({
     backgroundColor: "#E6F4F4",
     alignItems: "center",
     justifyContent: "center",
+    overflow: "hidden",
+  },
+  vehicleImage: {
+    width: 46,
+    height: 46,
+    borderRadius: 12,
   },
   titleBlock: {
     marginLeft: 10,

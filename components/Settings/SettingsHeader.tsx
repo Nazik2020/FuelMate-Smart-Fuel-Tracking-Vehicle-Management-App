@@ -2,6 +2,7 @@ import { Colors } from "@/constants/theme";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import {
+  Image,
   Platform,
   StatusBar,
   StyleSheet,
@@ -15,6 +16,7 @@ interface SettingsHeaderProps {
   subtitle: string;
   onMenuPress: () => void;
   onProfilePress?: () => void;
+  photoURL?: string | null;
 }
 
 export default function SettingsHeader({
@@ -22,6 +24,7 @@ export default function SettingsHeader({
   subtitle,
   onMenuPress,
   onProfilePress,
+  photoURL,
 }: SettingsHeaderProps) {
   return (
     <View style={styles.container}>
@@ -43,7 +46,11 @@ export default function SettingsHeader({
         onPress={onProfilePress}
         activeOpacity={0.7}
       >
-        <Ionicons name="person-outline" size={24} color={Colors.text} />
+        {photoURL ? (
+          <Image source={{ uri: photoURL }} style={styles.profileImage} />
+        ) : (
+          <Ionicons name="person-outline" size={24} color={Colors.text} />
+        )}
       </TouchableOpacity>
     </View>
   );
@@ -88,7 +95,15 @@ const styles = StyleSheet.create({
   profileButton: {
     width: 40,
     height: 40,
+    borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
+    overflow: "hidden",
+    backgroundColor: Colors.grayLight,
+  },
+  profileImage: {
+    width: "100%",
+    height: "100%",
+    resizeMode: "cover",
   },
 });
