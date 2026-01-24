@@ -1,13 +1,22 @@
 import { Colors } from "@/constants/theme";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  ActivityIndicator,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 interface ProfileHeaderProps {
   name?: string | null;
   memberSince?: string | null;
   onBack?: () => void;
   onEditAvatar?: () => void;
+  photoURL?: string | null;
+  isUploadingPhoto?: boolean;
 }
 
 const resolveName = (value?: string | null) => {
@@ -24,6 +33,8 @@ export function ProfileHeader({
   memberSince,
   onBack,
   onEditAvatar,
+  photoURL,
+  isUploadingPhoto,
 }: ProfileHeaderProps) {
   const displayName = resolveName(name);
 
@@ -40,14 +51,28 @@ export function ProfileHeader({
       <View style={styles.card}>
         <View style={styles.avatarWrapper}>
           <View style={styles.avatarCircle}>
-            <Ionicons name="person-outline" size={48} color={Colors.white} />
+            {photoURL ? (
+              <Image source={{ uri: photoURL }} style={styles.avatarImage} />
+            ) : (
+              <Ionicons name="person-outline" size={48} color={Colors.white} />
+            )}
+            {isUploadingPhoto ? (
+              <View style={styles.uploadOverlay}>
+                <ActivityIndicator size="small" color={Colors.white} />
+              </View>
+            ) : null}
           </View>
           <TouchableOpacity
             style={styles.editBadge}
             onPress={onEditAvatar}
+            disabled={isUploadingPhoto}
             accessibilityRole="button"
           >
-            <Ionicons name="create-outline" size={18} color={Colors.text} />
+            {isUploadingPhoto ? (
+              <ActivityIndicator size="small" color={Colors.text} />
+            ) : (
+              <Ionicons name="create-outline" size={18} color={Colors.text} />
+            )}
           </TouchableOpacity>
         </View>
         <Text style={styles.name}>{displayName}</Text>
@@ -99,6 +124,12 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary,
     alignItems: "center",
     justifyContent: "center",
+    overflow: "hidden",
+  },
+  avatarImage: {
+    width: "100%",
+    height: "100%",
+    resizeMode: "cover",
   },
   editBadge: {
     position: "absolute",
@@ -125,5 +156,11 @@ const styles = StyleSheet.create({
     marginTop: 6,
     fontSize: 15,
     color: Colors.textSecondary,
+  },
+  uploadOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.35)",
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

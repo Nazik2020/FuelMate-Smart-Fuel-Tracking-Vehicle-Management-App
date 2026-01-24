@@ -1,34 +1,16 @@
 import {
   ContactInfoCard,
   ProfileHeader,
-  Vehicle,
   VehiclesList,
 } from "@/components/user profile";
+import { auth } from "@/config/firebase";
+import { pickAndUploadProfilePhoto } from "@/config/profilePhoto";
+import { getUserVehicles, Vehicle } from "@/config/vehicleService";
 import { Colors } from "@/constants/theme";
 import { useCurrentUserProfile } from "@/hooks/use-current-user-profile";
-import { useRouter } from "expo-router";
-import React, { useMemo } from "react";
-import { auth } from "@/config/firebase";
-import { ScrollView, StatusBar, StyleSheet, View } from "react-native";
-
-const mockVehicles: Vehicle[] = [
-  {
-    id: "1",
-    name: "Toyota Corolla",
-    plate: "WP ABC-1234",
-    type: "Sedan",
-    fuel: "Petrol",
-    year: "2020",
-  },
-  {
-    id: "2",
-    name: "Honda Civic",
-    plate: "WP XYZ-5678",
-    type: "Sedan",
-    fuel: "Petrol",
-    year: "2019",
-  },
-];
+import { useFocusEffect, useRouter } from "expo-router";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { Alert, ScrollView, StatusBar, StyleSheet, View } from "react-native";
 
 const formatMemberSince = (value?: { toDate?: () => Date } | Date | null) => {
   if (!value) {
@@ -54,6 +36,58 @@ export default function UserProfileScreen() {
     () => formatMemberSince(profile?.createdAt ?? null),
     [profile?.createdAt],
   );
+  const [avatarUri, setAvatarUri] = useState<string | null>(null);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [isLoadingVehicles, setIsLoadingVehicles] = useState(true);
+
+  // Fetch vehicles when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      const fetchVehicles = async () => {
+        try {
+          setIsLoadingVehicles(true);
+          const userVehicles = await getUserVehicles();
+          setVehicles(userVehicles);
+        } catch (error) {
+          console.error("Failed to fetch vehicles:", error);
+        } finally {
+          setIsLoadingVehicles(false);
+        }
+      };
+
+      if (auth.currentUser) {
+        fetchVehicles();
+      }
+    }, []),
+  );
+
+  useEffect(() => {
+    setAvatarUri(profile?.photoURL ?? auth.currentUser?.photoURL ?? null);
+  }, [profile?.photoURL]);
+
+  const handleEditAvatar = async () => {
+    if (isUploadingPhoto) {
+      return;
+    }
+
+    try {
+      setIsUploadingPhoto(true);
+      const result = await pickAndUploadProfilePhoto();
+
+      if (!result.cancelled && result.photoURL) {
+        setAvatarUri(result.photoURL);
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Could not update your profile photo right now.";
+      Alert.alert("Profile Photo", message);
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  };
 
   return (
     <View style={styles.screen}>
@@ -63,12 +97,21 @@ export default function UserProfileScreen() {
           name={displayName}
           memberSince={memberSince}
           onBack={() => router.back()}
-          onEditAvatar={() => null}
+          onEditAvatar={handleEditAvatar}
+          photoURL={avatarUri}
+          isUploadingPhoto={isUploadingPhoto}
         />
 
-        <ContactInfoCard email={email} phone={profile?.phone ?? null} />
+        <ContactInfoCard email={email} />
 
-        <VehiclesList vehicles={mockVehicles} />
+        <VehiclesList
+          vehicles={vehicles}
+          isLoading={isLoadingVehicles}
+          onAddVehicle={() => router.push("/vehicles")}
+          onEditVehicle={(vehicleId) =>
+            router.push(`/vehicles?id=${vehicleId}`)
+          }
+        />
       </ScrollView>
     </View>
   );

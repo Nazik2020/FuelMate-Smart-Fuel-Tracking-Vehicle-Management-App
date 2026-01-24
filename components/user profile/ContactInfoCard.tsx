@@ -5,7 +5,6 @@ import { StyleSheet, Text, View } from "react-native";
 
 interface ContactInfoCardProps {
   email?: string | null;
-  phone?: string | null;
 }
 
 const getFieldValue = (value?: string | null) => {
@@ -17,7 +16,7 @@ const getFieldValue = (value?: string | null) => {
   return trimmed.length ? trimmed : "Not provided";
 };
 
-export function ContactInfoCard({ email, phone }: ContactInfoCardProps) {
+export function ContactInfoCard({ email }: ContactInfoCardProps) {
   return (
     <View style={styles.card}>
       <Text style={styles.title}>Contact Information</Text>
@@ -29,18 +28,6 @@ export function ContactInfoCard({ email, phone }: ContactInfoCardProps) {
         <View style={styles.infoBlock}>
           <Text style={styles.label}>Email</Text>
           <Text style={styles.value}>{getFieldValue(email)}</Text>
-        </View>
-      </View>
-
-      <View style={styles.divider} />
-
-      <View style={styles.row}>
-        <View style={styles.iconBadge}>
-          <Ionicons name="call-outline" size={24} color={Colors.primary} />
-        </View>
-        <View style={styles.infoBlock}>
-          <Text style={styles.label}>Phone</Text>
-          <Text style={styles.value}>{getFieldValue(phone)}</Text>
         </View>
       </View>
     </View>
@@ -90,10 +77,5 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: Colors.text,
     fontWeight: "600",
-  },
-  divider: {
-    height: 1,
-    backgroundColor: Colors.grayLight,
-    marginVertical: 14,
   },
 });

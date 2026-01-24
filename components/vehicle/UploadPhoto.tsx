@@ -1,22 +1,32 @@
 import { Colors } from "@/constants/theme";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 interface UploadPhotoProps {
-  onUpload?: () => void;
+  photoURL?: string | null;
   onChoose?: () => void;
 }
 
-export function UploadPhoto({ onUpload, onChoose }: UploadPhotoProps) {
+export function UploadPhoto({ photoURL, onChoose }: UploadPhotoProps) {
   return (
     <View style={styles.container}>
-      <View style={styles.dashedCircle}>
-        <Ionicons name="camera-outline" size={36} color={Colors.gray} />
-      </View>
+      <TouchableOpacity
+        style={styles.dashedCircle}
+        onPress={onChoose}
+        accessibilityRole="button"
+      >
+        {photoURL ? (
+          <Image source={{ uri: photoURL }} style={styles.image} />
+        ) : (
+          <Ionicons name="camera-outline" size={36} color={Colors.gray} />
+        )}
+      </TouchableOpacity>
       <Text style={styles.title}>Upload Vehicle Photo</Text>
       <TouchableOpacity onPress={onChoose} accessibilityRole="button">
-        <Text style={styles.link}>Choose from Gallery</Text>
+        <Text style={styles.link}>
+          {photoURL ? "Change Photo" : "Choose from Gallery"}
+        </Text>
       </TouchableOpacity>
     </View>
   );
@@ -38,6 +48,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 12,
+    overflow: "hidden",
+  },
+  image: {
+    width: 130,
+    height: 130,
+    borderRadius: 65,
   },
   title: {
     fontSize: 15,

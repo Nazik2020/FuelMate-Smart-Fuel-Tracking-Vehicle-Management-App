@@ -48,6 +48,14 @@ service cloud.firestore {
         resource.data.userId == request.auth.uid;
     }
 
+    // Vehicles (top-level collection)
+    match /vehicles/{vehicleId} {
+      allow create: if isSignedIn() &&
+        request.resource.data.userId == request.auth.uid;
+      allow read, update, delete: if isSignedIn() &&
+        resource.data.userId == request.auth.uid;
+    }
+
     // Notifications
     match /notifications/{notifId} {
       allow create: if isSignedIn(); // e.g., system or server adds

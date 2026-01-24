@@ -1,11 +1,12 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 interface DrawerHeaderProps {
   onClose: () => void;
   name?: string | null;
   email?: string | null;
+  photoURL?: string | null;
   onProfilePress?: () => void;
 }
 
@@ -22,6 +23,7 @@ export default function DrawerHeader({
   onClose,
   name,
   email,
+  photoURL,
   onProfilePress,
 }: DrawerHeaderProps) {
   const displayName = resolveDisplayValue(name, "Your Profile");
@@ -39,7 +41,11 @@ export default function DrawerHeader({
         activeOpacity={onProfilePress ? 0.85 : 1}
       >
         <View style={styles.profileIcon}>
-          <Ionicons name="person" size={40} color="#0D7377" />
+          {photoURL ? (
+            <Image source={{ uri: photoURL }} style={styles.profileImage} />
+          ) : (
+            <Ionicons name="person" size={40} color="#0D7377" />
+          )}
         </View>
         <Text style={styles.profileName}>{displayName}</Text>
         <Text style={styles.profileEmail}>{displayEmail}</Text>
@@ -71,6 +77,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 15,
+    overflow: "hidden",
+  },
+  profileImage: {
+    width: "100%",
+    height: "100%",
+    resizeMode: "cover",
   },
   profileName: {
     fontSize: 20,

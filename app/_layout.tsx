@@ -5,8 +5,9 @@ import {
 } from "@react-navigation/native";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import React, { useEffect } from "react";
+import { Platform, StyleSheet, View } from "react-native";
 import "react-native-reanimated";
-import React from 'react';
 
 import { useColorScheme } from "@/hooks/use-color-scheme";
 
@@ -16,22 +17,86 @@ export const unstable_settings = {
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
+  const isWeb = Platform.OS === "web";
+
+  useEffect(() => {
+    if (!isWeb || typeof document === "undefined") {
+      return;
+    }
+
+    const { body } = document;
+    const html = document.documentElement;
+    const previous = {
+      bodyOverflow: body.style.overflow,
+      htmlOverflow: html.style.overflow,
+      bodyBg: body.style.backgroundColor,
+      htmlBg: html.style.backgroundColor,
+    };
+
+    body.style.overflow = "hidden";
+    html.style.overflow = "hidden";
+    body.style.backgroundColor = "#05172D";
+    html.style.backgroundColor = "#05172D";
+
+    return () => {
+      body.style.overflow = previous.bodyOverflow;
+      html.style.overflow = previous.htmlOverflow;
+      body.style.backgroundColor = previous.bodyBg;
+      html.style.backgroundColor = previous.htmlBg;
+    };
+  }, [isWeb]);
 
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-      <Stack initialRouteName="loginpage">
-        <Stack.Screen name="loginpage" options={{ headerShown: false }} />
-        <Stack.Screen name="signuppage" options={{ headerShown: false }} />
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="(admin)" options={{ headerShown: false }} />
-        <Stack.Screen name="profile/index" options={{ headerShown: false }} />
-        <Stack.Screen
-          name="modal"
-          options={{ presentation: "modal", title: "Modal" }}
-        />
-        <Stack.Screen name="vehicles/index" options={{ title: "Vehicles" }} />
-      </Stack>
+      <View style={[styles.viewport, isWeb && styles.webViewport]}>
+        <View style={[styles.shell, isWeb && styles.webShell]}>
+          <Stack initialRouteName="loginpage">
+            <Stack.Screen name="loginpage" options={{ headerShown: false }} />
+            <Stack.Screen name="signuppage" options={{ headerShown: false }} />
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="(admin)" options={{ headerShown: false }} />
+            <Stack.Screen
+              name="profile/index"
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="modal"
+              options={{ presentation: "modal", title: "Modal" }}
+            />
+            <Stack.Screen
+              name="vehicles/index"
+              options={{ title: "Vehicles" }}
+            />
+          </Stack>
+        </View>
+      </View>
       <StatusBar style="auto" />
     </ThemeProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  viewport: {
+    flex: 1,
+  },
+  shell: {
+    flex: 1,
+  },
+  webViewport: {
+    backgroundColor: "#05172D",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 32,
+  },
+  webShell: {
+    width: 420,
+    maxWidth: "100%",
+    flex: 1,
+    borderRadius: 36,
+    overflow: "hidden",
+    shadowColor: "#000000",
+    shadowOpacity: 0.2,
+    shadowRadius: 32,
+    shadowOffset: { width: 0, height: 24 },
+  },
+});

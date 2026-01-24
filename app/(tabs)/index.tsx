@@ -9,6 +9,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
+  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -16,6 +17,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+<<<<<<< Updated upstream
 import { Colors } from "@/constants/theme";
 import { auth } from "@/config/firebase";
 
@@ -29,18 +31,186 @@ export default function HomeScreen() {
   const [chartData, setChartData] = useState<
     { label: string; value: number }[]
   >([]);
+=======
+
+import { auth } from "@/config/firebase";
+import { onAuthStateChanged } from "firebase/auth";
+
+/* ================= TYPES ================= */
+
+type FuelLog = {
+  id: string;
+  userId: string;
+  fuelStation: string;
+  date: string;
+  totalCost: number;
+  fuelLiters: number;
+  distancekm: number;
+};
+
+const MONTHS = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
+
+export default function HomeScreen() {
+  const router = useRouter();
+  const { displayName, profile } = useCurrentUserProfile();
+
+  const [drawerVisible, setDrawerVisible] = useState(false);
+  const [fuelLogs, setFuelLogs] = useState<FuelLog[]>([]);
+  const [chartData, setChartData] = useState<
+    { label: string; value: number }[]
+  >([]);
+
+  const [thisMonthTotal, setThisMonthTotal] = useState(0);
+  const [lastMonthTotal, setLastMonthTotal] = useState(0);
+  const [lastFillText, setLastFillText] = useState("No data");
+  const [avgEfficiency, setAvgEfficiency] = useState("N/A");
+
+  /* ================= FETCH LOGS ================= */
+>>>>>>> Stashed changes
 
   useEffect(() => {
     const fetchData = async () => {
       const logs = await getFuelLogs();
       setFuelLogs(logs);
 
+<<<<<<< Updated upstream
       const bData = await getBarChartData();
       setChartData(bData);
     };
     fetchData();
   }, []);
 
+=======
+      try {
+        const logs = await getFuelLogs(user.uid);
+
+        const normalizedLogs: FuelLog[] = logs.map((log: any) => ({
+          id: log.id,
+          userId: log.userId,
+          fuelStation: log.fuelStation,
+          date: log.date?.toDate ? log.date.toDate().toISOString() : log.date,
+          totalCost: log.totalCost != null ? Number(log.totalCost) : 0,
+          //  Safe conversion
+          fuelLiters: log.fuelLiters != null ? Number(log.fuelLiters) : 0,
+          distancekm: log.distancekm != null ? Number(log.distancekm) : 0,
+        }));
+
+        setFuelLogs(normalizedLogs);
+      } catch (error) {
+        console.error("Error fetching fuel logs:", error);
+      }
+    });
+
+    return unsubscribe;
+  }, []);
+
+  /* ================= MONTHLY CHART ================= */
+
+  useEffect(() => {
+    const monthlyTotals = Array(12).fill(0);
+
+    fuelLogs.forEach((log) => {
+      const d = new Date(log.date);
+      monthlyTotals[d.getMonth()] += log.totalCost;
+    });
+
+    setChartData(
+      MONTHS.map((month, index) => ({
+        label: month,
+        value: monthlyTotals[index],
+      })),
+    );
+  }, [fuelLogs]);
+
+  /* ================= MONTHLY TOTALS ================= */
+
+  useEffect(() => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    let thisMonth = 0;
+    let lastMonth = 0;
+
+    fuelLogs.forEach((log) => {
+      const d = new Date(log.date);
+      if (d.getFullYear() === currentYear && d.getMonth() === currentMonth) {
+        thisMonth += log.totalCost;
+      }
+      if (
+        d.getFullYear() === currentYear &&
+        d.getMonth() === currentMonth - 1
+      ) {
+        lastMonth += log.totalCost;
+      }
+    });
+
+    setThisMonthTotal(thisMonth);
+    setLastMonthTotal(lastMonth);
+  }, [fuelLogs]);
+
+  /* ================= LAST FILL ================= */
+
+  useEffect(() => {
+    if (fuelLogs.length === 0) {
+      setLastFillText("No fills yet");
+      return;
+    }
+
+    const latestLog = fuelLogs.reduce((a, b) =>
+      new Date(a.date) > new Date(b.date) ? a : b,
+    );
+
+    const diffTime = Math.abs(Date.now() - new Date(latestLog.date).getTime());
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) setLastFillText("Today");
+    else if (diffDays === 1) setLastFillText("1 day ago");
+    else setLastFillText(`${diffDays} days ago`);
+  }, [fuelLogs]);
+
+  /* ================= AVERAGE EFFICIENCY ================= */
+
+  useEffect(() => {
+    if (fuelLogs.length === 0) {
+      setAvgEfficiency("N/A");
+      return;
+    }
+
+    let totalDistance = 0;
+    let totalFuel = 0;
+
+    fuelLogs.forEach((log) => {
+      if (!isNaN(log.distancekm) && !isNaN(log.fuelLiters)) {
+        totalDistance += log.distancekm;
+        totalFuel += log.fuelLiters;
+      }
+    });
+
+    if (totalFuel === 0) {
+      setAvgEfficiency("N/A");
+      return;
+    }
+
+    setAvgEfficiency(`${(totalDistance / totalFuel).toFixed(1)} km/L`);
+  }, [fuelLogs]);
+
+  /* ================= UI ================= */
+
+>>>>>>> Stashed changes
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -64,7 +234,14 @@ export default function HomeScreen() {
             style={styles.profileButton}
             onPress={() => router.push("/profile")}
           >
-            <Ionicons name="person-outline" size={24} color="#1F2937" />
+            {profile?.photoURL ? (
+              <Image
+                source={{ uri: profile.photoURL }}
+                style={styles.profileImage}
+              />
+            ) : (
+              <Ionicons name="person-outline" size={24} color="#1F2937" />
+            )}
           </TouchableOpacity>
         </View>
 
@@ -149,6 +326,12 @@ const styles = StyleSheet.create({
     backgroundColor: "#F3F4F6",
     justifyContent: "center",
     alignItems: "center",
+    overflow: "hidden",
+  },
+  profileImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
   },
   placeholder: {
     margin: 10,
