@@ -1,15 +1,13 @@
+import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 
-interface prop {
-
-  title: string,
-  value: string
-
+interface Rectangle2Props {
+  title: string;
+  value: string;
 }
 
-const Rectangle2: React.FC<prop> = ({ title, value }) => {
+const Rectangle2: React.FC<Rectangle2Props> = ({ title, value }) => {
   // Determine icon based on title
   const getIcon = () => {
     if (title.toLowerCase().includes("efficiency")) {
@@ -53,7 +51,7 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 4, // Android shadow
     //marginVertical: 10,
-
+    flex: 1, // Fill the container height
   },
 
   inner: {

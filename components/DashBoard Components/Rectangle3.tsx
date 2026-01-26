@@ -2,16 +2,13 @@ import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 
-interface prop {
-
-  name: string,
-  value: string,
-  date: String,
-
-
+interface Rectangle3Props {
+  name: string;
+  value: string;
+  date: string;
 }
 
-const Rectangle3: React.FC<prop> = ({ name, value, date }) => {
+const Rectangle3: React.FC<Rectangle3Props> = ({ name, value, date }) => {
 
   return (
 
@@ -36,18 +33,7 @@ const Rectangle3: React.FC<prop> = ({ name, value, date }) => {
 
 const styles = StyleSheet.create({
 
-  cardR1: {
-    backgroundColor: "#F3F4F6", // Light grey background
-    borderRadius: 12,           // rounded
-    overflow: "hidden",
-    shadowColor: "#000",        // shadow
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 4, // Android shadow
-    //marginVertical: 10,
 
-  },
   cardR2: {
     backgroundColor: "#ffffff", // White background
     borderRadius: 12,           // rounded

@@ -1,7 +1,9 @@
+import { auth } from "@/config/firebase";
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
-import React from "react";
-import { Platform, StyleSheet, View } from "react-native";
+import { onAuthStateChanged, User } from "firebase/auth";
+import React, { useEffect, useState } from "react";
+import { ActivityIndicator, Platform, StyleSheet, Text, View } from "react-native";
 
 const Colors = {
   primary: "#0D7377",
@@ -12,6 +14,40 @@ const Colors = {
 
 export default function AdminLayout() {
   const isWeb = Platform.OS === "web";
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Listen to auth state directly
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      console.log("Admin Layout: Auth state changed, user:", firebaseUser?.email || "null");
+      setUser(firebaseUser);
+      setLoading(false);
+    });
+
+    return unsubscribe;
+  }, []);
+
+  // Show loading while checking auth
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={Colors.primary} />
+        <Text style={styles.loadingText}>Loading admin panel...</Text>
+      </View>
+    );
+  }
+
+  // Show message if not authenticated (don't redirect to avoid route issues)
+  if (!user) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Ionicons name="lock-closed" size={48} color={Colors.gray} />
+        <Text style={styles.errorTitle}>Access Denied</Text>
+        <Text style={styles.loadingText}>Please log in to access the admin panel</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.viewport, isWeb && styles.webViewport]}>
@@ -19,7 +55,7 @@ export default function AdminLayout() {
         <Tabs
           screenOptions={{
             tabBarActiveTintColor: Colors.primary,
-            tabBarInactiveTintColor: Colors.gray,
+            tabBarInactiveTintColor: "#6B7280", // Darker gray
             headerShown: false,
             tabBarStyle: {
               height: Platform.OS === "ios" ? 88 : 65,
@@ -31,7 +67,7 @@ export default function AdminLayout() {
             },
             tabBarLabelStyle: {
               fontSize: 12,
-              fontWeight: "500",
+              fontWeight: "600",
             },
           }}
         >
@@ -119,5 +155,23 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 32,
     shadowOffset: { width: 0, height: 24 },
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: Colors.white,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: Colors.gray,
+    textAlign: "center",
+  },
+  errorTitle: {
+    marginTop: 16,
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#111827",
   },
 });

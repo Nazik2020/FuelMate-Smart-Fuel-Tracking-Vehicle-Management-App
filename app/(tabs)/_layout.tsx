@@ -31,7 +31,7 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: Colors.primary,
-        tabBarInactiveTintColor: Colors.gray,
+        tabBarInactiveTintColor: "#6B7280", // Darker gray for better visibility
         headerShown: false,
         tabBarButton: HapticTab,
         tabBarStyle: {
@@ -44,7 +44,7 @@ export default function TabLayout() {
         },
         tabBarLabelStyle: {
           fontSize: 12,
-          fontWeight: "500",
+          fontWeight: "600", // Increased weight
         },
       }}
     >
@@ -106,6 +106,13 @@ export default function TabLayout() {
               color={color}
             />
           ),
+        }}
+      />
+      <Tabs.Screen
+        name="notifications"
+        options={{
+          href: null,
+          title: "Alerts",
         }}
       />
       <Tabs.Screen

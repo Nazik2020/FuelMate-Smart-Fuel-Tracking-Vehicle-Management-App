@@ -54,11 +54,22 @@ export default function LoginPage() {
         normalizedUsername === ADMIN_USERNAME.toLowerCase();
 
       if (matchesAdminIdentifier && password === ADMIN_PASSWORD) {
-        console.log("✅ Admin shortcut matched, navigating to admin panel");
-        setUsername("");
-        setPassword("");
-        router.replace("/(admin)" as any);
-        return;
+        console.log("✅ Admin credentials matched, signing in via Firebase...");
+        try {
+          // Actually sign in with Firebase using admin email
+          await signInWithEmailAndPassword(auth, ADMIN_EMAIL, ADMIN_PASSWORD);
+          console.log("✅ Admin Firebase auth successful, navigating to admin panel");
+          setUsername("");
+          setPassword("");
+          router.replace("/(admin)" as any);
+          return;
+        } catch (adminAuthError: any) {
+          console.log("⚠️ Admin Firebase auth failed, trying to create admin or continue:", adminAuthError.message);
+          // If admin account doesn't exist in Firebase, just proceed with the local bypass
+          // but the admin panel will show Access Denied since there's no Firebase session
+          Alert.alert("Admin Login Error", "Admin account not set up in Firebase. Please create admin@fuelmate.com account first.");
+          return;
+        }
       }
 
       let userEmailToSignIn = "";
@@ -125,8 +136,9 @@ export default function LoginPage() {
       setUsername("");
       setPassword("");
 
+      // ONLY admin@fuelmate.com goes to admin panel
       if (user.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
-        console.log("✅ Admin login successful, navigating to admin panel");
+        console.log("✅ Admin email match, navigating to admin panel");
         router.replace("/(admin)" as any);
       } else {
         console.log("✅ Regular user login successful, navigating to home");

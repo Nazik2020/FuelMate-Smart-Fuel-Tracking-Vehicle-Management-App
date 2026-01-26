@@ -1,20 +1,28 @@
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import React, { useState } from "react";
 import {
+    AdminAlert,
+    AdminStats,
+    FuelExpenseData,
+    getAdminStats,
+    getFuelExpenseOverview,
+    getRecentAlerts,
+} from "@/config/adminDashboardService";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import React, { useEffect, useState } from "react";
+import {
+    ActivityIndicator,
+    Dimensions,
+    Pressable,
     ScrollView,
     StyleSheet,
     Text,
-    View,
-    Dimensions,
     TouchableOpacity,
-    Pressable,
+    View,
 } from "react-native";
-import { LineChart } from "react-native-gifted-charts";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const { width } = Dimensions.get("window");
 
-const StatCard = ({ title, value, icon, color, iconType = "Ionicons" }: any) => (
+const StatCard = ({ title, value, icon, color, iconType = "Ionicons", loading = false }: any) => (
     <View style={styles.statCard}>
         <View style={[styles.iconContainer, { backgroundColor: color + "15" }]}>
             {iconType === "Ionicons" ? (
@@ -24,7 +32,11 @@ const StatCard = ({ title, value, icon, color, iconType = "Ionicons" }: any) => 
             )}
         </View>
         <Text style={styles.statLabel}>{title}</Text>
-        <Text style={styles.statValue}>{value}</Text>
+        {loading ? (
+            <ActivityIndicator size="small" color={color} />
+        ) : (
+            <Text style={styles.statValue}>{value}</Text>
+        )}
     </View>
 );
 
@@ -54,33 +66,79 @@ const AlertCard = ({ title, time, icon, color }: any) => {
 
 export default function AdminDashboard() {
     const [activeTab, setActiveTab] = useState("This Week");
+    const [loading, setLoading] = useState(true);
+    const [stats, setStats] = useState<AdminStats>({ totalUsers: 0, totalVehicles: 0, activeAlerts: 0 });
+    const [weeklyData, setWeeklyData] = useState<FuelExpenseData[]>([]);
+    const [monthlyData, setMonthlyData] = useState<FuelExpenseData[]>([]);
+    const [weeklyTotal, setWeeklyTotal] = useState(0);
+    const [monthlyTotal, setMonthlyTotal] = useState(0);
+    const [alerts, setAlerts] = useState<AdminAlert[]>([]);
+    const [alertsToShow, setAlertsToShow] = useState(7); // Show 7 initially
 
-    const weeklyData = [
-        { value: 400, label: "Mon" },
-        { value: 350, label: "Tue" },
-        { value: 500, label: "Wed" },
-        { value: 450, label: "Thu" },
-        { value: 600, label: "Fri" },
-        { value: 400, label: "Sat" },
-        { value: 300, label: "Sun" },
-    ];
+    useEffect(() => {
+        loadDashboardData();
+    }, []);
 
-    const monthlyData = [
-        { value: 1200, label: "Jan" },
-        { value: 1500, label: "Feb" },
-        { value: 1100, label: "Mar" },
-        { value: 1800, label: "Apr" },
-        { value: 2100, label: "May" },
-        { value: 1700, label: "Jun" },
-        { value: 1900, label: "Jul" },
-        { value: 2400, label: "Aug" },
-        { value: 2000, label: "Sep" },
-        { value: 2200, label: "Oct" },
-        { value: 2500, label: "Nov" },
-        { value: 2800, label: "Dec" },
-    ];
+    const loadDashboardData = async () => {
+        try {
+            setLoading(true);
+
+            // Fetch all data in parallel
+            const [statsData, weeklyExpense, monthlyExpense, alertsData] = await Promise.all([
+                getAdminStats(),
+                getFuelExpenseOverview("week"),
+                getFuelExpenseOverview("month"),
+                getRecentAlerts(),
+            ]);
+
+            setStats(statsData);
+            setWeeklyData(weeklyExpense.data);
+            setWeeklyTotal(weeklyExpense.total);
+            setMonthlyData(monthlyExpense.data);
+            setMonthlyTotal(monthlyExpense.total);
+            setAlerts(alertsData);
+        } catch (error) {
+            console.error("Error loading dashboard data:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleLoadMoreAlerts = () => {
+        setAlertsToShow(prev => prev + 7);
+    };
 
     const currentData = activeTab === "This Week" ? weeklyData : monthlyData;
+    const currentTotal = activeTab === "This Week" ? weeklyTotal : monthlyTotal;
+
+    const getAlertIcon = (type: string) => {
+        switch (type) {
+            case "vehicle": return "alert-circle-outline";
+            case "user": return "person-add-outline";
+            case "expense": return "flag-outline";
+            default: return "notifications-outline";
+        }
+    };
+
+    const getAlertColor = (type: string) => {
+        switch (type) {
+            case "vehicle": return "#F59E0B";
+            case "user": return "#0D9488";
+            case "expense": return "#EF4444";
+            default: return "#6B7280";
+        }
+    };
+
+    const visibleAlerts = alerts.slice(0, alertsToShow);
+    const hasMoreAlerts = alertsToShow < alerts.length;
+
+    // Debug logging
+    console.log('📊 Dashboard Alerts Debug:');
+    console.log('  Total alerts:', alerts.length);
+    console.log('  Alerts to show:', alertsToShow);
+    console.log('  Visible alerts:', visibleAlerts.length);
+    console.log('  Has more alerts:', hasMoreAlerts);
+
 
     return (
         <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
@@ -90,17 +148,6 @@ export default function AdminDashboard() {
                     <Text style={styles.headerTitle}>Admin Dashboard</Text>
                     <Text style={styles.headerSubtitle}>Overview & Analytics</Text>
                 </View>
-                <View style={styles.headerIcons}>
-                    <TouchableOpacity style={styles.headerIconButton}>
-                        <Ionicons name="notifications-outline" size={24} color="#111827" />
-                        <View style={styles.notificationDot} />
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.headerIconButton}>
-                        <View style={styles.avatarPlaceholder}>
-                            <Ionicons name="person-outline" size={20} color="#6B7280" />
-                        </View>
-                    </TouchableOpacity>
-                </View>
             </View>
 
             <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -109,113 +156,61 @@ export default function AdminDashboard() {
                 <View style={styles.statsRow}>
                     <StatCard
                         title="Total Users"
-                        value="1,482"
+                        value={stats.totalUsers.toLocaleString()}
                         icon="people-outline"
                         color="#0D9488"
+                        loading={loading}
                     />
                     <StatCard
                         title="Total Vehicles"
-                        value="2,150"
+                        value={stats.totalVehicles.toLocaleString()}
                         icon="car-outline"
                         color="#F59E0B"
                         iconType="MaterialCommunityIcons"
+                        loading={loading}
                     />
                     <StatCard
                         title="Active Alerts"
-                        value="3"
+                        value={stats.activeAlerts.toString()}
                         icon="notifications-outline"
                         color="#EF4444"
+                        loading={loading}
                     />
                 </View>
 
-                {/* Chart Section */}
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Fuel Expense Overview</Text>
-
-                    <View style={styles.tabRow}>
-                        <TouchableOpacity
-                            onPress={() => setActiveTab("This Week")}
-                            style={[styles.tab, activeTab === "This Week" && styles.activeTab]}
-                        >
-                            <Text style={[styles.tabText, activeTab === "This Week" && styles.activeTabText]}>This Week</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            onPress={() => setActiveTab("This Month")}
-                            style={[styles.tab, activeTab === "This Month" && styles.activeTab]}
-                        >
-                            <Text style={[styles.tabText, activeTab === "This Month" && styles.activeTabText]}>This Month</Text>
-                        </TouchableOpacity>
-                    </View>
-
-                    <Text style={styles.chartSubtitle}>
-                        {activeTab === "This Week" ? "Weekly Fuel Expense" : "Monthly Fuel Expense"}
-                    </Text>
-                    <View style={styles.expenseRow}>
-                        <Text style={styles.expenseValue}>
-                            {activeTab === "This Week" ? "$1,250" : "$21,400"}
-                        </Text>
-                        <View style={styles.growthBadge}>
-                            <Ionicons name="trending-up" size={14} color="#0D9488" />
-                            <Text style={styles.growthText}>5.2%</Text>
-                        </View>
-                    </View>
-
-                    <View style={styles.chartContainer}>
-                        <LineChart
-                            data={currentData}
-                            width={width - 80}
-                            height={160}
-                            thickness={3}
-                            color="#0D9488"
-                            hideDataPoints
-                            noOfSections={3}
-                            yAxisThickness={0}
-                            xAxisThickness={0}
-                            hideRules
-                            areaChart
-                            startFillColor="#0D9488"
-                            startOpacity={0.2}
-                            endFillColor="#0D9488"
-                            endOpacity={0.01}
-                            pointerConfig={{
-                                pointerStripColor: '#0D9488',
-                                pointerStripWidth: 2,
-                                pointerColor: '#0D9488',
-                                radius: 6,
-                            }}
-                        />
-                    </View>
-
-                    <View style={styles.xAxis}>
-                        {currentData.map(item => (
-                            <Text key={item.label} style={[styles.xAxisLabel, activeTab === "This Month" && { fontSize: 8 }]}>
-                                {item.label}
-                            </Text>
-                        ))}
-                    </View>
-                </View>
+                {/* Chart Section Removed as per request */}
 
                 {/* Recent Alerts Section */}
                 <View style={styles.alertsContainer}>
                     <Text style={styles.sectionTitle}>Recent Alerts</Text>
-                    <AlertCard
-                        title="Vehicle XYZ"
-                        time="2 hours ago"
-                        icon="alert-circle-outline"
-                        color="#F59E0B"
-                    />
-                    <AlertCard
-                        title="New User Registration: J. Doe"
-                        time="Yesterday"
-                        icon="person-add-outline"
-                        color="#0D9488"
-                    />
-                    <AlertCard
-                        title="Expense Report Flagged"
-                        time="2 days ago"
-                        icon="flag-outline"
-                        color="#EF4444"
-                    />
+                    {loading ? (
+                        <ActivityIndicator size="large" color="#0D9488" style={{ marginTop: 20 }} />
+                    ) : alerts.length === 0 ? (
+                        <Text style={{ color: "#6B7280", textAlign: "center", marginTop: 20 }}>No recent alerts</Text>
+                    ) : (
+                        <>
+                            {visibleAlerts.map((alert) => (
+                                <AlertCard
+                                    key={alert.id}
+                                    title={alert.title}
+                                    time={alert.time}
+                                    icon={getAlertIcon(alert.type)}
+                                    color={getAlertColor(alert.type)}
+                                />
+                            ))}
+                            {hasMoreAlerts && (
+                                <TouchableOpacity
+                                    style={styles.loadMoreButton}
+                                    onPress={handleLoadMoreAlerts}
+                                >
+                                    <Ionicons name="chevron-down-circle-outline" size={20} color="#0D9488" />
+                                    <Text style={styles.loadMoreText}>
+                                        Load More
+                                    </Text>
+                                </TouchableOpacity>
+                            )}
+                        </>
+                    )}
                 </View>
             </ScrollView>
         </SafeAreaView>
@@ -456,5 +451,21 @@ const styles = StyleSheet.create({
     alertTime: {
         fontSize: 12,
         color: "#6B7280",
+    },
+    loadMoreButton: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "#E0F2F1",
+        paddingVertical: 14,
+        paddingHorizontal: 20,
+        borderRadius: 16,
+        marginTop: 12,
+        gap: 8,
+    },
+    loadMoreText: {
+        fontSize: 14,
+        fontWeight: "600",
+        color: "#0D9488",
     },
 });

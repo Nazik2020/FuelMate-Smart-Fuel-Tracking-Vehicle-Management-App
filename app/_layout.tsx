@@ -5,11 +5,16 @@ import {
 } from "@react-navigation/native";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useEffect } from "react";
-import { Platform, StyleSheet, View } from "react-native";
+import { useEffect } from "react";
+import { LogBox, Platform, StyleSheet, View } from "react-native";
 import "react-native-reanimated";
 
 import { useColorScheme } from "@/hooks/use-color-scheme";
+
+// Ignored logs for specific Expo Go warnings
+LogBox.ignoreLogs([
+  "expo-notifications: Android Push notifications (remote notifications) functionality provided by expo-notifications was removed from Expo Go",
+]);
 
 export const unstable_settings = {
   anchor: "(tabs)",
@@ -64,9 +69,9 @@ export default function RootLayout() {
               options={{ presentation: "modal", title: "Modal" }}
             />
             <Stack.Screen
-              name="vehicles/index"
               options={{ title: "Vehicles" }}
             />
+            <Stack.Screen name="help" options={{ headerShown: false }} />
           </Stack>
         </View>
       </View>

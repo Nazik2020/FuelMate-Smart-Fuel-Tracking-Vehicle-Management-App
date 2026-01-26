@@ -9,7 +9,7 @@ import { getUserVehicles, Vehicle } from "@/config/vehicleService";
 import { Colors } from "@/constants/theme";
 import { useCurrentUserProfile } from "@/hooks/use-current-user-profile";
 import { useFocusEffect, useRouter } from "expo-router";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert, ScrollView, StatusBar, StyleSheet, View } from "react-native";
 
 const formatMemberSince = (value?: { toDate?: () => Date } | Date | null) => {
@@ -121,9 +121,9 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: Colors.backgroundSecondary,
+    paddingTop: 40,
   },
   content: {
-    paddingTop: 10,
     paddingBottom: 24,
   },
 });

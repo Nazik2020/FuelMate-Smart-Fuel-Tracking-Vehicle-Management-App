@@ -1,7 +1,5 @@
 import { Colors } from "@/constants/theme";
-import { Ionicons } from "@expo/vector-icons";
-import React from "react";
-import { StyleSheet, Switch, Text, View } from "react-native";
+import { Platform, StyleSheet } from "react-native";
 
 interface ReminderToggleProps {
   value: boolean;
@@ -12,29 +10,7 @@ export default function ReminderToggle({
   value,
   onToggle,
 }: ReminderToggleProps) {
-  return (
-    <View style={styles.container}>
-      <View style={styles.leftContent}>
-        <Ionicons
-          name="notifications-outline"
-          size={22}
-          color={Colors.text}
-          style={styles.icon}
-        />
-        <Text style={styles.label}>Set Reminder</Text>
-      </View>
-      <Switch
-        value={value}
-        onValueChange={onToggle}
-        trackColor={{
-          false: Colors.grayLight,
-          true: Colors.primary,
-        }}
-        thumbColor={Colors.white}
-        ios_backgroundColor={Colors.grayLight}
-      />
-    </View>
-  );
+
 }
 
 const styles = StyleSheet.create({
@@ -42,9 +18,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: Colors.backgroundSecondary,
+    backgroundColor: Colors.white,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
     paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingVertical: Platform.OS === "ios" ? 10 : 6,
     borderRadius: 12,
     marginBottom: 20,
   },
@@ -54,6 +32,7 @@ const styles = StyleSheet.create({
   },
   icon: {
     marginRight: 12,
+    color: Colors.textSecondary,
   },
   label: {
     fontSize: 16,

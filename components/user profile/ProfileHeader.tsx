@@ -1,6 +1,5 @@
 import { Colors } from "@/constants/theme";
 import { Ionicons } from "@expo/vector-icons";
-import React from "react";
 import {
   ActivityIndicator,
   Image,
@@ -41,11 +40,16 @@ export function ProfileHeader({
   return (
     <View style={styles.wrapper}>
       <View style={styles.topBar}>
-        <TouchableOpacity onPress={onBack} accessibilityRole="button">
-          <Ionicons name="chevron-back" size={24} color={Colors.text} />
+        <TouchableOpacity
+          onPress={onBack}
+          style={styles.backButton}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <Ionicons name="arrow-back" size={24} color={Colors.text} />
         </TouchableOpacity>
         <Text style={styles.topTitle}>Profile</Text>
-        <Ionicons name="person-circle-outline" size={28} color={Colors.gray} />
+        <View style={styles.placeholder} />
       </View>
 
       <View style={styles.card}>
@@ -54,32 +58,28 @@ export function ProfileHeader({
             {photoURL ? (
               <Image source={{ uri: photoURL }} style={styles.avatarImage} />
             ) : (
-              <Ionicons name="person-outline" size={48} color={Colors.white} />
+              <Ionicons name="person" size={50} color={Colors.white} />
             )}
-            {isUploadingPhoto ? (
+            {isUploadingPhoto && (
               <View style={styles.uploadOverlay}>
                 <ActivityIndicator size="small" color={Colors.white} />
               </View>
-            ) : null}
+            )}
           </View>
           <TouchableOpacity
             style={styles.editBadge}
             onPress={onEditAvatar}
             disabled={isUploadingPhoto}
             accessibilityRole="button"
+            accessibilityLabel="Edit profile photo"
           >
-            {isUploadingPhoto ? (
-              <ActivityIndicator size="small" color={Colors.text} />
-            ) : (
-              <Ionicons name="create-outline" size={18} color={Colors.text} />
-            )}
+            <Ionicons name="create-outline" size={16} color={Colors.text} />
           </TouchableOpacity>
         </View>
+
         <Text style={styles.name}>{displayName}</Text>
-        {memberSince ? (
+        {memberSince && (
           <Text style={styles.subtitle}>Member since {memberSince}</Text>
-        ) : (
-          <Text style={styles.subtitle}>Complete your profile details</Text>
         )}
       </View>
     </View>
@@ -95,6 +95,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     marginBottom: 16,
+  },
+  backButton: {
+    padding: 4,
+  },
+  placeholder: {
+    width: 32,
   },
   topTitle: {
     fontSize: 20,

@@ -1,4 +1,3 @@
-import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 interface Props {
@@ -11,9 +10,9 @@ export default function CardMSpend({ thisMonth, lastMonth }: Props) {
     <View style={styles.cardS}>
       <View style={styles.inner}>
         <Text style={styles.text}>This Month's Spend</Text>
-        <Text style={styles.text2}>Rs {thisMonth.toFixed(2)}</Text>
+        <Text style={styles.text2}>Rs {thisMonth.toFixed(0)}</Text>
         <Text style={styles.text}>
-          vs. Rs {lastMonth.toFixed(2)} last month
+          vs. Rs {lastMonth.toFixed(0)} last month
         </Text>
       </View>
     </View>

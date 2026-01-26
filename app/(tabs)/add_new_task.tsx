@@ -1,11 +1,13 @@
 import {
   DueDatePicker,
   NotesInput,
-  ReminderToggle,
   SaveButton,
   TaskHeader,
   TaskNameInput,
 } from "@/components/AddTask";
+import { auth } from "@/config/firebase";
+import { scheduleTaskNotification, sendNotificationToUser } from "@/config/notificationService";
+import { addTask } from "@/config/taskService";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
@@ -17,7 +19,6 @@ import {
   StyleSheet,
   View,
 } from "react-native";
-
 // Task interface for type safety
 interface Task {
   taskName: string;
@@ -32,7 +33,6 @@ export default function AddNewTask() {
   // Form state
   const [taskName, setTaskName] = useState("");
   const [dueDate, setDueDate] = useState<Date | null>(null);
-  const [setReminder, setSetReminder] = useState(true);
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -45,8 +45,6 @@ export default function AddNewTask() {
   const isFormValid = (): boolean => {
     return taskName.trim().length > 0;
   };
-
-  // Handle save task
   const handleSaveTask = async () => {
     if (!isFormValid()) {
       Alert.alert("Validation Error", "Please enter a task name.");
@@ -56,18 +54,31 @@ export default function AddNewTask() {
     setLoading(true);
 
     try {
-      const newTask: Task = {
+      if (dueDate) {
+        await scheduleTaskNotification(
+          "Task Reminder", // Title
+          `Don't forget: ${taskName}`, // Body
+          dueDate
+        );
+      }
+
+      await addTask({
         taskName: taskName.trim(),
-        dueDate,
-        setReminder,
+        dueDate: dueDate,
+        setReminder: true,
         notes: notes.trim(),
-      };
+      });
 
-      // TODO: Save task to database/storage
-      console.log("Saving task:", newTask);
-
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Send in-app notification
+      if (auth.currentUser) {
+        await sendNotificationToUser(auth.currentUser.uid, {
+          type: "service",
+          title: "New Task Scheduled",
+          message: `Task '${taskName}' scheduled for ${dueDate ? dueDate.toLocaleDateString() : 'today'}`,
+          icon: "calendar-outline",
+          iconColor: "#0D7377",
+        });
+      }
 
       Alert.alert("Success", "Task saved successfully!", [
         {
@@ -75,9 +86,9 @@ export default function AddNewTask() {
           onPress: () => router.back(),
         },
       ]);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving task:", error);
-      Alert.alert("Error", "Failed to save task. Please try again.");
+      Alert.alert("Error", error.message || "Failed to save task. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -107,10 +118,7 @@ export default function AddNewTask() {
           />
 
           {/* Due Date Picker */}
-          <DueDatePicker value={dueDate} onChange={setDueDate} />
-
-          {/* Reminder Toggle */}
-          <ReminderToggle value={setReminder} onToggle={setSetReminder} />
+          <DueDatePicker value={dueDate} onChange={setDueDate} label="Date" />
 
           {/* Notes Input */}
           <NotesInput

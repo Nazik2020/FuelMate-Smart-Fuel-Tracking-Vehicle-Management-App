@@ -3,11 +3,11 @@ import CardMSpend from "@/components/DashBoard Components/CardMSpend";
 import Rectangle2 from "@/components/DashBoard Components/Rectangle2";
 import Rectangle3 from "@/components/DashBoard Components/Rectangle3";
 import DrawerMenu from "@/components/DrawerMenu";
-import { getFuelLogs } from "@/config/HomeDashboard";
+import { FuelLog, getFuelLogs } from "@/config/fuelLogService"; // Updated import
 import { useCurrentUserProfile } from "@/hooks/use-current-user-profile";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import { useFocusEffect, useRouter } from "expo-router"; // Added useFocusEffect
+import { useCallback, useEffect, useState } from "react";
 import {
   Image,
   ScrollView,
@@ -17,35 +17,10 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Colors } from "@/constants/theme";
-import { auth } from "@/config/firebase";
-import { onAuthStateChanged } from "firebase/auth";
-
-/* ================= TYPES ================= */
-
-type FuelLog = {
-  id: string;
-  userId: string;
-  fuelStation: string;
-  date: string;
-  totalCost: number;
-  fuelLiters: number;
-  distancekm: number;
-};
 
 const MONTHS = [
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ];
 
 export default function HomeScreen() {
@@ -54,9 +29,7 @@ export default function HomeScreen() {
 
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [fuelLogs, setFuelLogs] = useState<FuelLog[]>([]);
-  const [chartData, setChartData] = useState<{ label: string; value: number }[]>(
-    []
-  );
+  const [chartData, setChartData] = useState<{ label: string; value: number }[]>([]);
   const [thisMonthTotal, setThisMonthTotal] = useState(0);
   const [lastMonthTotal, setLastMonthTotal] = useState(0);
   const [lastFillText, setLastFillText] = useState("No data");
@@ -64,51 +37,72 @@ export default function HomeScreen() {
 
   /* ================= FETCH LOGS ================= */
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        setFuelLogs([]);
-        return;
-      }
+  const fetchLogs = async () => {
+    try {
+      const logs = await getFuelLogs();
 
-      try {
-        const logs = await getFuelLogs(user.uid);
+      // Transform timestamp to date string for display/calc if needed
+      // but keep original object structure mostly
+      setFuelLogs(logs);
+    } catch (error) {
+      console.error("Error fetching fuel logs:", error);
+    }
+  };
 
-        const normalizedLogs: FuelLog[] = logs.map((log: any) => ({
-          id: log.id,
-          userId: log.userId,
-          fuelStation: log.fuelStation,
-          date: log.date?.toDate
-            ? log.date.toDate().toISOString()
-            : log.date,
-          totalCost: log.totalCost != null ? Number(log.totalCost) : 0,
-          fuelLiters: log.fuelLiters != null ? Number(log.fuelLiters) : 0,
-          distancekm: log.distancekm != null ? Number(log.distancekm) : 0,
-        }));
+  // Use useFocusEffect to refresh data when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      fetchLogs();
+    }, [])
+  );
 
-        setFuelLogs(normalizedLogs);
-      } catch (error) {
-        console.error("Error fetching fuel logs:", error);
-      }
-    });
-
-    return unsubscribe;
-  }, []);
+  /* ================= MONTHLY CHART ================= */
 
   /* ================= MONTHLY CHART ================= */
 
   useEffect(() => {
-    const monthlyTotals = Array(12).fill(0);
+    const now = new Date();
+    const last7Months: {
+      monthIndex: number;
+      year: number;
+      label: string;
+      value: number;
+    }[] = [];
 
+    // 1. Generate the last 5 months (including current)
+    for (let i = 4; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      last7Months.push({
+        monthIndex: d.getMonth(),
+        year: d.getFullYear(),
+        label: MONTHS[d.getMonth()],
+        value: 0,
+      });
+    }
+
+    // 2. Aggregate data from fuelLogs
     fuelLogs.forEach((log) => {
-      const d = new Date(log.date);
-      monthlyTotals[d.getMonth()] += log.totalCost;
+      const d = log.date?.toDate ? log.date.toDate() : new Date(log.date);
+      if (!isNaN(d.getTime())) {
+        const logMonth = d.getMonth();
+        const logYear = d.getFullYear();
+
+        // Find the matching month in our generated list
+        const match = last7Months.find(
+          (item) => item.monthIndex === logMonth && item.year === logYear
+        );
+
+        if (match) {
+          match.value += Number(log.fuelAmountRs || 0);
+        }
+      }
     });
 
+    // 3. Map to chart data format
     setChartData(
-      MONTHS.map((month, index) => ({
-        label: month,
-        value: monthlyTotals[index],
+      last7Months.map((item) => ({
+        label: item.label,
+        value: item.value,
       }))
     );
   }, [fuelLogs]);
@@ -124,15 +118,15 @@ export default function HomeScreen() {
     let lastMonth = 0;
 
     fuelLogs.forEach((log) => {
-      const d = new Date(log.date);
+      const d = log.date?.toDate ? log.date.toDate() : new Date(log.date);
       if (d.getFullYear() === currentYear && d.getMonth() === currentMonth) {
-        thisMonth += log.totalCost;
+        thisMonth += Number(log.fuelAmountRs || 0);
       }
       if (
         d.getFullYear() === currentYear &&
         d.getMonth() === currentMonth - 1
       ) {
-        lastMonth += log.totalCost;
+        lastMonth += Number(log.fuelAmountRs || 0);
       }
     });
 
@@ -148,11 +142,11 @@ export default function HomeScreen() {
       return;
     }
 
-    const latestLog = fuelLogs.reduce((a, b) =>
-      new Date(a.date) > new Date(b.date) ? a : b
-    );
+    // Logs are already ordered by date desc from service
+    const latestLog = fuelLogs[0];
+    const latestDate = latestLog.date?.toDate ? latestLog.date.toDate() : new Date(latestLog.date);
 
-    const diffTime = Math.abs(Date.now() - new Date(latestLog.date).getTime());
+    const diffTime = Math.abs(Date.now() - latestDate.getTime());
     const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
     if (diffDays === 0) setLastFillText("Today");
@@ -163,27 +157,37 @@ export default function HomeScreen() {
   /* ================= AVERAGE EFFICIENCY ================= */
 
   useEffect(() => {
+    // For now we don't have odometer readings to calculate real efficiency
+    // We can show the estimated range of the latest log or average range
     if (fuelLogs.length === 0) {
       setAvgEfficiency("N/A");
       return;
     }
 
-    let totalDistance = 0;
-    let totalFuel = 0;
+    // Example: average estimated range from logs
+    // Parsing "330km - 360km" to get average
+    let totalRange = 0;
+    let count = 0;
 
-    fuelLogs.forEach((log) => {
-      if (!isNaN(log.distancekm) && !isNaN(log.fuelLiters)) {
-        totalDistance += log.distancekm;
-        totalFuel += log.fuelLiters;
+    fuelLogs.forEach(log => {
+      if (log.estimatedRange) {
+        const parts = log.estimatedRange.split("-");
+        if (parts.length === 2) {
+          const min = parseInt(parts[0].replace(/[^0-9]/g, ""));
+          const max = parseInt(parts[1].replace(/[^0-9]/g, ""));
+          if (!isNaN(min) && !isNaN(max)) {
+            totalRange += (min + max) / 2;
+            count++;
+          }
+        }
       }
     });
 
-    if (totalFuel === 0) {
+    if (count > 0) {
+      setAvgEfficiency(`~${Math.round(totalRange / count)} km`);
+    } else {
       setAvgEfficiency("N/A");
-      return;
     }
-
-    setAvgEfficiency(`${(totalDistance / totalFuel).toFixed(1)} km/L`);
   }, [fuelLogs]);
 
   /* ================= UI ================= */
@@ -241,15 +245,20 @@ export default function HomeScreen() {
 
         <Text style={styles.text4}>Recent Fuel Logs</Text>
 
-        {fuelLogs.map((log) => (
-          <View style={styles.placeholder} key={log.id}>
-            <Rectangle3
-              name={log.fuelStation}
-              value={`Rs ${log.totalCost}`}
-              date={log.date}
-            />
-          </View>
-        ))}
+        {fuelLogs.map((log) => {
+          const d = log.date?.toDate ? log.date.toDate() : new Date(log.date);
+          const dateStr = !isNaN(d.getTime()) ? d.toDateString() : "Unknown Date";
+
+          return (
+            <View style={styles.placeholder} key={log.id}>
+              <Rectangle3
+                name={log.station || "Unknown Station"}
+                value={`Rs ${Math.round(Number(log.fuelAmountRs || 0))}`}
+                date={dateStr}
+              />
+            </View>
+          );
+        })}
       </ScrollView>
 
       <DrawerMenu
@@ -300,10 +309,11 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 20,
     marginTop: 10,
+    alignItems: "stretch", // Ensure equal height
   },
   Cformgroup: {
     width: "48%",
-    backgroundColor: "#F3F4F6",
+    // backgroundColor: "#F3F4F6", // Removed to allow card to handle bg
     borderRadius: 12,
   },
   text4: {

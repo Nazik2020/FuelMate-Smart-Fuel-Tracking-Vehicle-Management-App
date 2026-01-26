@@ -49,8 +49,8 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
   },
   title: {
-    fontSize: 18,
-    fontWeight: "600",
+    fontSize: 20,
+    fontWeight: "bold",
     color: Colors.text,
   },
   placeholder: {

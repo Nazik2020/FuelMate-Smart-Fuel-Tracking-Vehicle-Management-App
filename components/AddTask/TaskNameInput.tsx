@@ -1,6 +1,6 @@
 import { Colors } from "@/constants/theme";
 import React from "react";
-import { StyleSheet, Text, TextInput, View } from "react-native";
+import { Platform, StyleSheet, Text, TextInput, View } from "react-native";
 
 interface TaskNameInputProps {
   value: string;
@@ -33,16 +33,16 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    fontWeight: "500",
-    color: Colors.textSecondary,
+    fontWeight: "600",
+    color: "#9CA3AF",
     marginBottom: 8,
   },
   input: {
     borderWidth: 1,
-    borderColor: Colors.grayLight,
+    borderColor: "#E5E7EB",
     borderRadius: 12,
     paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingVertical: Platform.OS === "ios" ? 14 : 10,
     fontSize: 16,
     color: Colors.text,
     backgroundColor: Colors.white,

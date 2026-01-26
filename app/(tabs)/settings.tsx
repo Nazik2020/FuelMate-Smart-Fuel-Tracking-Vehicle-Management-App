@@ -3,8 +3,7 @@ import DrawerMenu from "@/components/DrawerMenu";
 import {
   SettingsHeader,
   SettingsItem,
-  SettingsSection,
-  SettingsToggle,
+  SettingsSection
 } from "@/components/Settings";
 import { auth } from "@/config/firebase";
 import { Colors } from "@/constants/theme";
@@ -44,7 +43,7 @@ export default function SettingsScreen() {
   };
 
   const handleHelpPress = () => {
-    Alert.alert("Help & FAQ", "Navigate to help center");
+    router.push("/help");
   };
 
   const handleAboutPress = () => {
@@ -116,38 +115,8 @@ export default function SettingsScreen() {
           />
         </SettingsSection>
 
-        {/* Preferences Section */}
-        <SettingsSection title="PREFERENCES">
-          <SettingsToggle
-            icon="notifications-outline"
-            iconColor={Colors.primary}
-            iconBackground={Colors.primaryLight + "20"}
-            title="Notifications"
-            subtitle="Push notifications"
-            value={notificationsEnabled}
-            onToggle={setNotificationsEnabled}
-          />
-          <SettingsToggle
-            icon="moon-outline"
-            iconColor={Colors.primary}
-            iconBackground={Colors.primaryLight + "20"}
-            title="Dark Mode"
-            subtitle="Toggle dark theme"
-            value={darkModeEnabled}
-            onToggle={setDarkModeEnabled}
-            isLast
-          />
-        </SettingsSection>
-
         {/* Support Section */}
         <SettingsSection title="SUPPORT">
-          <SettingsItem
-            icon="shield-outline"
-            iconColor={Colors.primary}
-            iconBackground={Colors.primaryLight + "20"}
-            title="Privacy Policy"
-            onPress={handlePrivacyPolicyPress}
-          />
           <SettingsItem
             icon="help-circle-outline"
             iconColor={Colors.primary}

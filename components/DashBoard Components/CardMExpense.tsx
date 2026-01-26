@@ -1,5 +1,5 @@
-import React, { useMemo } from "react";
-import { Dimensions, ScrollView, StyleSheet, Text, View } from "react-native";
+import React from "react";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { BarChart } from "react-native-gifted-charts";
 
 interface BarData {
@@ -21,13 +21,18 @@ export default function CardMExpense({ data }: CardMExpenseProps) {
           <BarChart
             data={data}
             height={150}
-            barWidth={30}          // width of each bar
-            spacing={20}           // space between bars
+            barWidth={32}
+            spacing={20}
             frontColor="#0D7377"
-            xAxisLabelTextStyle={{ color: "#0D7377", fontSize: 12 }}
-            yAxisTextStyle={{ color: "#9CA3AF" }}
+            barBorderTopLeftRadius={4}
+            barBorderTopRightRadius={4}
+            xAxisLabelTextStyle={{ color: "#6B7280", fontSize: 12 }}
+            yAxisTextStyle={{ color: "#6B7280", fontSize: 12 }}
+            xAxisThickness={0}
+            yAxisThickness={0}
+            hideRules
             showLine={false}
-            initialSpacing={0}
+            initialSpacing={10}
           />
         </ScrollView>
       </View>

@@ -114,6 +114,15 @@ export default function SignupPage() {
         darkMode: false,
       });
 
+      // Send welcome notification
+      try {
+        await createWelcomeNotification(user.uid, firstName.trim());
+        console.log("✅ Welcome notification sent");
+      } catch (notifError) {
+        console.error("⚠️ Failed to send welcome notification:", notifError);
+        // Don't fail signup if notification fails
+      }
+
       Alert.alert("Success", "Signup successful!");
 
       setFirstName("");

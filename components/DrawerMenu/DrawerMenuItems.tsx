@@ -26,10 +26,9 @@ interface DrawerMenuItemsProps {
 const menuItems: MenuItem[] = [
   { name: "Home", icon: "home", route: "/(tabs)" },
   { name: "Profile", icon: "person-outline", route: "/profile" },
-  { name: "Logs", icon: "speedometer-outline", route: "/(tabs)/logs" }, // Updated per instructions
+  { name: "Logs", icon: "speedometer-outline", route: "/(tabs)/logs" },
   { name: "Ride", icon: "map-outline", route: "/(tabs)/ride" },
-  { name: "Notifications", icon: "notifications-outline", route: null },
-  { name: "Contact Us", icon: "call-outline", route: null },
+  { name: "Notifications", icon: "notifications-outline", route: "/(tabs)/notifications" },
   { name: "Settings", icon: "settings-outline", route: "/(tabs)/settings" },
 ];
 

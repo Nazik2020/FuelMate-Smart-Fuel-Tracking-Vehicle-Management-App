@@ -26,10 +26,11 @@ service cloud.firestore {
 
     // Fuel logs
     match /fuelLogs/{logId} {
+      // Allow any authenticated user to read all logs (for admin dashboard analytics)
+      allow read: if isSignedIn();
+      // Only owner can create/update/delete their own logs
       allow create, update, delete: if isSignedIn() &&
         request.resource.data.userId == request.auth.uid;
-      allow read: if isSignedIn() &&
-        resource.data.userId == request.auth.uid;
     }
 
     // Fuel requests
@@ -50,17 +51,22 @@ service cloud.firestore {
 
     // Vehicles (top-level collection)
     match /vehicles/{vehicleId} {
+      // Allow any authenticated user to read (for admin dashboard)
+      allow read: if isSignedIn();
+      // Only owner can create/update/delete their own vehicles
       allow create: if isSignedIn() &&
         request.resource.data.userId == request.auth.uid;
-      allow read, update, delete: if isSignedIn() &&
+      allow update, delete: if isSignedIn() &&
         resource.data.userId == request.auth.uid;
     }
 
     // Notifications
     match /notifications/{notifId} {
-      allow create: if isSignedIn(); // e.g., system or server adds
-      allow read, update: if isSignedIn() &&
-        resource.data.recipientId == request.auth.uid;
+      allow create: if isSignedIn(); // Admins and system can create
+      allow read: if isSignedIn() &&
+        resource.data.userId == request.auth.uid;
+      allow update: if isSignedIn() &&
+        resource.data.userId == request.auth.uid; // Users can mark as read
       allow delete: if false;
     }
 
@@ -73,6 +79,12 @@ service cloud.firestore {
     // Admin logs (lock down unless you add an admin claim)
     match /adminLogs/{logId} {
       allow read, write: if false;
+    }
+
+    // Fuel prices (admin can update, all users can read)
+    match /fuelPrices/{priceDocId} {
+      allow read: if isSignedIn();           // All authenticated users can read
+      allow write: if isSignedIn();          // Authenticated users can write (admin access)
     }
 
     // Deny everything else by default
