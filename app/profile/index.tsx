@@ -50,7 +50,7 @@ export default function UserProfileScreen() {
           const userVehicles = await getUserVehicles();
           setVehicles(userVehicles);
         } catch (error) {
-          console.error("Failed to fetch vehicles:", error);
+          // Silent error handling
         } finally {
           setIsLoadingVehicles(false);
         }

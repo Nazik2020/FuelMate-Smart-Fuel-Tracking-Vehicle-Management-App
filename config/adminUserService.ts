@@ -12,7 +12,7 @@ import {
 } from "firebase/firestore";
 import { auth, db } from "./firebase";
 
-// ==================== TYPES ====================
+// Types
 
 export type UserStatus = "Active" | "Inactive" | "Pending";
 
@@ -35,7 +35,7 @@ export interface UserStats {
     inactive: number;
 }
 
-// ==================== SERVICE FUNCTIONS ====================
+// Service Functions
 
 /**
  * Check if a user is an admin based on email or username
@@ -47,39 +47,18 @@ const isAdminUser = (email?: string, username?: string): boolean => {
 };
 
 /**
- * Helper to check if date is older than 6 months
- */
-const isInactive = (date?: Date): boolean => {
-    if (!date) return true;
-    // If no lastLoginAt, but recently created? check createdAt. 
-    // Let's passed the date to check.
-    const sixMonthsAgo = new Date();
-    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-    return date < sixMonthsAgo;
-};
-
-/**
  * Get all users for admin management
- * COMPLETE FUNCTION WITH FULL LOGGING
  */
 export async function getAllUsers(): Promise<AdminUser[]> {
-    console.log("=== START getAllUsers ===");
-
     try {
         const currentUser = auth.currentUser;
-        console.log("Current user:", currentUser?.email || "NOT LOGGED IN");
-
         if (!currentUser) {
-            console.warn("⚠️ User not authenticated, returning empty array");
             return [];
         }
 
-        console.log("👥 Fetching users from Firebase...");
         const snapshot = await getDocs(collection(db, "users"));
-        console.log(`✅ Found ${snapshot.size} users`);
 
         if (snapshot.empty) {
-            console.log("⚠️ No users found in database");
             return [];
         }
 
@@ -128,16 +107,10 @@ export async function getAllUsers(): Promise<AdminUser[]> {
             .filter(user => user.id !== currentUser?.uid && !isAdminUser(user.email, user.username));
 
         users.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-        console.log(`✅ Returning ${users.length} users (excluding admins)`);
-        console.log("=== END getAllUsers ===\n");
 
         return users;
 
     } catch (error: any) {
-        console.error("❌ ERROR in getAllUsers:", error?.message);
-        if (error?.code === "permission-denied") {
-            console.error("🔒 PERMISSION DENIED - Check Firebase rules!");
-        }
         return [];
     }
 }
@@ -146,17 +119,13 @@ export async function getAllUsers(): Promise<AdminUser[]> {
  * Get user statistics
  */
 export async function getUserStats(): Promise<UserStats> {
-    console.log("=== START getUserStats ===");
-
     try {
         const currentUser = auth.currentUser;
         if (!currentUser) {
-            console.warn("⚠️ User not authenticated");
             return { total: 0, active: 0, pending: 0, inactive: 0 };
         }
 
         const snapshot = await getDocs(collection(db, "users"));
-        console.log(`📊 Stats from ${snapshot.size} users`);
 
         let total = 0;
         let active = 0;
@@ -202,13 +171,10 @@ export async function getUserStats(): Promise<UserStats> {
         });
 
         const stats = { total, active, pending, inactive };
-        console.log("Stats:", stats);
-        console.log("=== END getUserStats ===\n");
 
         return stats;
 
     } catch (error: any) {
-        console.error("❌ ERROR in getUserStats:", error?.message);
         return { total: 0, active: 0, pending: 0, inactive: 0 };
     }
 }
@@ -232,7 +198,6 @@ export async function searchUsers(searchQuery: string): Promise<AdminUser[]> {
                 `${user.firstName} ${user.lastName}`.toLowerCase().includes(query)
         );
     } catch (error) {
-        console.error("Error searching users:", error);
         return [];
     }
 }
@@ -249,9 +214,7 @@ export async function updateUserStatus(
             status,
             updatedAt: Timestamp.now(),
         });
-        console.log(`✅ Updated user ${userId} status to ${status}`);
     } catch (error: any) {
-        console.error("❌ Error updating user status:", error?.message);
         throw error;
     }
 }

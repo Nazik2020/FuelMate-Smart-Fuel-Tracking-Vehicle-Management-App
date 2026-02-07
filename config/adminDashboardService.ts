@@ -10,7 +10,7 @@ import {
 } from "firebase/firestore";
 import { auth, db } from "./firebase";
 
-// ==================== TYPES ====================
+// Types
 
 export interface AdminStats {
     totalUsers: number;
@@ -31,7 +31,7 @@ export interface AdminAlert {
     createdAt: Date;
 }
 
-// ==================== HELPER FUNCTIONS ====================
+// Helper Functions
 
 /**
  * Check if a user is an admin based on email or username
@@ -55,25 +55,17 @@ const formatRelativeTime = (date: Date): string => {
     return date.toLocaleDateString();
 };
 
-// ==================== SERVICE FUNCTIONS ====================
+// Service Functions
 
 /**
  * Get admin dashboard statistics
- * COMPLETE FUNCTION WITH FULL LOGGING
  */
 export async function getAdminStats(): Promise<AdminStats> {
-    console.log("=== START getAdminStats ===");
-
     try {
         const currentUser = auth.currentUser;
-        console.log("Current user:", currentUser?.email || "NOT LOGGED IN");
-
         if (!currentUser) {
-            console.warn("⚠️ User not authenticated");
             return { totalUsers: 0, totalVehicles: 0, activeAlerts: 0 };
         }
-
-        console.log("📊 Fetching dashboard stats...");
 
         const usersSnapshot = await getDocs(collection(db, "users"));
         // Filter out admin users from count
@@ -82,11 +74,9 @@ export async function getAdminStats(): Promise<AdminStats> {
             return !isAdminUser(data.email, data.username);
         });
         const totalUsers = nonAdminUsers.length;
-        console.log(`  Users (excluding admins): ${totalUsers}`);
 
         const vehiclesSnapshot = await getDocs(collection(db, "vehicles"));
         const totalVehicles = vehiclesSnapshot.size;
-        console.log(`  Vehicles: ${totalVehicles}`);
 
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
@@ -103,15 +93,12 @@ export async function getAdminStats(): Promise<AdminStats> {
                 }
             }
         });
-        console.log(`  Active Alerts: ${activeAlerts}`);
 
         const stats = { totalUsers, totalVehicles, activeAlerts };
-        console.log("=== END getAdminStats ===\n");
 
         return stats;
 
     } catch (error: any) {
-        console.error("❌ ERROR in getAdminStats:", error?.message);
         return { totalUsers: 0, totalVehicles: 0, activeAlerts: 0 };
     }
 }
@@ -190,7 +177,6 @@ export async function getFuelExpenseOverview(period: "week" | "month"): Promise<
             return { data: result, total: Math.round(total) };
         }
     } catch (error) {
-        console.error("Error fetching fuel expense overview:", error);
         return { data: [], total: 0 };
     }
 }
@@ -231,7 +217,6 @@ export async function getMonthlyFuelExpenses(): Promise<FuelExpenseData[]> {
 
         return result;
     } catch (error) {
-        console.error("Error fetching fuel expenses:", error);
         return [];
     }
 }
@@ -294,7 +279,6 @@ export async function getRecentAlerts(): Promise<AdminAlert[]> {
             .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
             .slice(0, 10);
     } catch (error) {
-        console.error("Error fetching alerts:", error);
         return [];
     }
 }

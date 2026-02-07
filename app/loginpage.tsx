@@ -47,24 +47,24 @@ export default function LoginPage() {
     try {
       const trimmedUsername = username.trim();
       const normalizedUsername = trimmedUsername.toLowerCase();
-      console.log("🔐 Attempting login for username:", normalizedUsername);
+
 
       const matchesAdminIdentifier =
         normalizedUsername === ADMIN_EMAIL.toLowerCase() ||
         normalizedUsername === ADMIN_USERNAME.toLowerCase();
 
       if (matchesAdminIdentifier && password === ADMIN_PASSWORD) {
-        console.log("✅ Admin credentials matched, signing in via Firebase...");
+
         try {
           // Actually sign in with Firebase using admin email
           await signInWithEmailAndPassword(auth, ADMIN_EMAIL, ADMIN_PASSWORD);
-          console.log("✅ Admin Firebase auth successful, navigating to admin panel");
+
           setUsername("");
           setPassword("");
           router.replace("/(admin)" as any);
           return;
         } catch (adminAuthError: any) {
-          console.log("⚠️ Admin Firebase auth failed, trying to create admin or continue:", adminAuthError.message);
+
           // If admin account doesn't exist in Firebase, just proceed with the local bypass
           // but the admin panel will show Access Denied since there's no Firebase session
           Alert.alert("Admin Login Error", "Admin account not set up in Firebase. Please create admin@fuelmate.com account first.");
@@ -112,20 +112,20 @@ export default function LoginPage() {
               });
             }
           } catch (e) {
-            console.warn("Username sync failed", e);
+            // Username sync failed silently
           }
         }
       } else {
         if (trimmedUsername.includes("@") && trimmedUsername.includes(".")) {
           userEmailToSignIn = trimmedUsername;
         } else {
-          console.log("❌ No user found with identifier:", normalizedUsername);
+
           Alert.alert("Login Failed", "Invalid username or password");
           return;
         }
       }
 
-      console.log("🔑 Attempting sign-in for:", userEmailToSignIn);
+
       const userCredential = await signInWithEmailAndPassword(
         auth,
         userEmailToSignIn,
@@ -138,14 +138,14 @@ export default function LoginPage() {
 
       // ONLY admin@fuelmate.com goes to admin panel
       if (user.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
-        console.log("✅ Admin email match, navigating to admin panel");
+
         router.replace("/(admin)" as any);
       } else {
-        console.log("✅ Regular user login successful, navigating to home");
+
         router.replace("/(tabs)");
       }
     } catch (error: any) {
-      console.error("❌ Login Error:", error.code, error.message);
+
       Alert.alert("Login Failed", "Invalid username or password");
     }
   };
@@ -195,7 +195,7 @@ export default function LoginPage() {
             />
           </View>
 
-          <Text style={styles.label1}>Forgot Password?</Text>
+          <Text style={styles.label1}></Text>
         </View>
 
         <TouchableOpacity style={styles.signinbutton} onPress={handleSignIn}>

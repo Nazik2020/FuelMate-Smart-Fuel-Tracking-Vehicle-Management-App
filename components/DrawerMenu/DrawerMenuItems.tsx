@@ -58,7 +58,7 @@ export default function DrawerMenuItems({
     try {
       await signOut(auth);
     } catch (err) {
-      console.warn("Sign-out failed", err);
+      // Silent logout error
     }
     onItemPress?.();
     router.replace("/loginpage" as any);

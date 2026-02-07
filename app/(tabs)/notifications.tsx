@@ -71,7 +71,7 @@ export default function NotificationsScreen() {
             await markAllAsRead(user.uid);
             // Real-time listener will auto-update the UI
         } catch (error) {
-            console.error("Error marking all as read:", error);
+            // Silent error handling
         }
     };
 
@@ -80,7 +80,7 @@ export default function NotificationsScreen() {
             await markAsRead(id);
             // Real-time listener will auto-update the UI
         } catch (error) {
-            console.error("Error marking as read:", error);
+            // Silent error handling
         }
     };
 

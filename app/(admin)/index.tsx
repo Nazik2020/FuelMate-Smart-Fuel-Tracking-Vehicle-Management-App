@@ -98,7 +98,7 @@ export default function AdminDashboard() {
             setMonthlyTotal(monthlyExpense.total);
             setAlerts(alertsData);
         } catch (error) {
-            console.error("Error loading dashboard data:", error);
+            // Error loading dashboard data
         } finally {
             setLoading(false);
         }
@@ -131,14 +131,6 @@ export default function AdminDashboard() {
 
     const visibleAlerts = alerts.slice(0, alertsToShow);
     const hasMoreAlerts = alertsToShow < alerts.length;
-
-    // Debug logging
-    console.log('📊 Dashboard Alerts Debug:');
-    console.log('  Total alerts:', alerts.length);
-    console.log('  Alerts to show:', alertsToShow);
-    console.log('  Visible alerts:', visibleAlerts.length);
-    console.log('  Has more alerts:', hasMoreAlerts);
-
 
     return (
         <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>

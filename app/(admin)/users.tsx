@@ -154,7 +154,6 @@ export default function UserManagement() {
             setUsers(usersData);
             setStats(statsData);
         } catch (error) {
-            console.error("Error loading users:", error);
             Alert.alert("Error", "Failed to load users");
         } finally {
             setLoading(false);
@@ -183,14 +182,6 @@ export default function UserManagement() {
     // Pagination
     const visibleUsers = filteredUsers.slice(0, usersToShow);
     const hasMoreUsers = usersToShow < filteredUsers.length;
-
-    // Debug logging
-    console.log('👥 User Management Debug:');
-    console.log('  Total users:', users.length);
-    console.log('  Filtered users:', filteredUsers.length);
-    console.log('  Users to show:', usersToShow);
-    console.log('  Visible users:', visibleUsers.length);
-    console.log('  Has more users:', hasMoreUsers);
 
     return (
         <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>

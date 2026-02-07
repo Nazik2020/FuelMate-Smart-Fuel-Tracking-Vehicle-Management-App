@@ -59,7 +59,6 @@ const uriToBase64 = async (uri: string): Promise<string> => {
     });
     return `data:image/jpeg;base64,${base64}`;
   } catch (error) {
-    console.error("FileSystem error:", error);
     throw new Error("Could not process the image file.");
   }
 };

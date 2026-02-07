@@ -58,7 +58,6 @@ export default function VehicleScreen() {
           setPhotoURL(vehicle.photoURL || null);
         }
       } catch (error) {
-        console.error("Failed to load vehicle:", error);
         showAlert("Error", "Could not load vehicle details");
       } finally {
         setIsLoadingVehicle(false);
@@ -147,14 +146,14 @@ export default function VehicleScreen() {
           initialData={
             existingVehicle
               ? {
-                  name: existingVehicle.name,
-                  vehicleType: existingVehicle.vehicleType,
-                  fuelType: existingVehicle.fuelType,
-                  licensePlate: existingVehicle.licensePlate,
-                  make: existingVehicle.make,
-                  model: existingVehicle.model,
-                  year: existingVehicle.year,
-                }
+                name: existingVehicle.name,
+                vehicleType: existingVehicle.vehicleType,
+                fuelType: existingVehicle.fuelType,
+                licensePlate: existingVehicle.licensePlate,
+                make: existingVehicle.make,
+                model: existingVehicle.model,
+                year: existingVehicle.year,
+              }
               : undefined
           }
           onSubmit={handleSubmit}

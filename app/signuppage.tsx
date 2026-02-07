@@ -1,4 +1,5 @@
-import { auth, db } from "@/config/firebase"; // adjust if needed
+import { auth, db } from "@/config/firebase";
+import { createWelcomeNotification } from "@/config/notificationService";
 import { MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Link, useRouter } from "expo-router";
@@ -117,10 +118,8 @@ export default function SignupPage() {
       // Send welcome notification
       try {
         await createWelcomeNotification(user.uid, firstName.trim());
-        console.log("✅ Welcome notification sent");
       } catch (notifError) {
-        console.error("⚠️ Failed to send welcome notification:", notifError);
-        // Don't fail signup if notification fails
+        // Notification failure is non-critical
       }
 
       Alert.alert("Success", "Signup successful!");

@@ -49,9 +49,9 @@ export const calculateDistance = (
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos(deg2rad(lat1)) *
-      Math.cos(deg2rad(lat2)) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
+    Math.cos(deg2rad(lat2)) *
+    Math.sin(dLon / 2) *
+    Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   const d = R * c; // Distance in km
   return parseFloat(d.toFixed(1));
@@ -107,7 +107,6 @@ export const fetchNearbyFuelStations = async (
 
     return [];
   } catch (error) {
-    console.error("Error fetching fuel stations:", error);
     throw new Error("Could not fetch nearby fuel stations");
   }
 };
@@ -146,7 +145,6 @@ export const searchLocation = async (
     const data = await response.json();
     return data;
   } catch (error) {
-    console.error("Search error:", error);
     return [];
   }
 };
@@ -200,7 +198,6 @@ export const fetchRoute = async (
 
     return null;
   } catch (error) {
-    console.error("Route error:", error);
     throw new Error("Could not fetch directions");
   }
 };
@@ -233,7 +230,6 @@ export const reverseGeocode = async (
     const data = await response.json();
     return data.display_name || null;
   } catch (error) {
-    console.error("Reverse geocode error:", error);
     return null;
   }
 };

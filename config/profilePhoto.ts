@@ -22,10 +22,8 @@ const ensureUser = () => {
 
 /**
  * Convert image URI to base64 data URL
- * Works on both web and native platforms
  */
 const uriToBase64 = async (uri: string): Promise<string> => {
-  // For web: fetch and convert blob to base64
   if (Platform.OS === "web") {
     const response = await fetch(uri);
     const blob = await response.blob();
@@ -40,15 +38,13 @@ const uriToBase64 = async (uri: string): Promise<string> => {
     });
   }
 
-  // For native: use dynamic import of expo-file-system
   try {
     const FileSystem = await import("expo-file-system");
-    const base64 = await FileSystem.readAsStringAsync(uri, {
-      encoding: FileSystem.EncodingType.Base64,
+    const base64 = await FileSystem.default.readAsStringAsync(uri, {
+      encoding: "base64",
     });
     return `data:image/jpeg;base64,${base64}`;
   } catch (error) {
-    console.error("FileSystem error:", error);
     throw new Error("Could not process the image file.");
   }
 };
@@ -56,20 +52,18 @@ const uriToBase64 = async (uri: string): Promise<string> => {
 export async function pickAndUploadProfilePhoto(): Promise<UploadResult> {
   const user = ensureUser();
 
-  // Request permission
   const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
   if (permission.status !== "granted") {
     throw new Error("Media access is required to change your profile photo.");
   }
 
-  // Launch image picker with base64 enabled for native
   const pickerResult = await ImagePicker.launchImageLibraryAsync({
     mediaTypes: ImagePicker.MediaTypeOptions.Images,
     allowsEditing: true,
     aspect: [1, 1],
     quality: 0.3,
     exif: false,
-    base64: Platform.OS !== "web", // Enable base64 on native for fallback
+    base64: Platform.OS !== "web",
   });
 
   if (pickerResult.canceled || !pickerResult.assets?.length) {
@@ -83,43 +77,32 @@ export async function pickAndUploadProfilePhoto(): Promise<UploadResult> {
   }
 
   try {
-    console.log("Processing image...", Platform.OS);
-
     let photoURL: string;
 
-    // Use built-in base64 from picker if available (native)
     if (asset.base64) {
       const mimeType = asset.mimeType || "image/jpeg";
       photoURL = `data:${mimeType};base64,${asset.base64}`;
-      console.log("Using picker base64, length:", photoURL.length);
     } else {
-      // Convert URI to base64 (web or fallback)
       photoURL = await uriToBase64(asset.uri);
-      console.log("Converted to base64, length:", photoURL.length);
     }
 
-    // Check if base64 is too large for Firestore (max ~1MB document)
     if (photoURL.length > 900000) {
       throw new Error("Image is too large. Please select a smaller photo.");
     }
 
-    // Store in Firestore
     await updateDoc(doc(db, "users", user.uid), {
       photoURL: photoURL,
       updatedAt: serverTimestamp(),
     });
-    console.log("Saved to Firestore");
 
-    // Sync to Firebase Auth (optional, may fail for large images)
     try {
       await updateProfile(user, { photoURL: photoURL });
     } catch (error) {
-      console.warn("Auth profile sync skipped (image too large for Auth)");
+      // Auth profile sync skipped for large images
     }
 
     return { cancelled: false, photoURL };
   } catch (error) {
-    console.error("Profile photo failed:", error);
     if (error instanceof Error) {
       throw error;
     }

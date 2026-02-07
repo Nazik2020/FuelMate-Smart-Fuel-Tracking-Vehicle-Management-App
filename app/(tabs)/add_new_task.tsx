@@ -87,7 +87,6 @@ export default function AddNewTask() {
         },
       ]);
     } catch (error: any) {
-      console.error("Error saving task:", error);
       Alert.alert("Error", error.message || "Failed to save task. Please try again.");
     } finally {
       setLoading(false);

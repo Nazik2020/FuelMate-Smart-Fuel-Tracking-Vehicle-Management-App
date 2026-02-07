@@ -53,18 +53,14 @@ export const useLocation = (): UseLocationResult => {
   const fetchStations = async (lat: number, lon: number) => {
     // Prevent multiple simultaneous fetches
     if (isFetchingRef.current) {
-      console.log("Already fetching stations, skipping...");
       return;
     }
 
     isFetchingRef.current = true;
     setIsFetchingStations(true);
 
-    console.log("Fetching fuel stations near:", lat, lon);
-
     try {
       const stations = await fetchNearbyFuelStations(lat, lon, 10000);
-      console.log("Found stations:", stations.length);
 
       if (isMounted.current) {
         setFuelStations(stations);
@@ -76,7 +72,7 @@ export const useLocation = (): UseLocationResult => {
         }
       }
     } catch (error) {
-      console.log("Error fetching stations:", error);
+      // Error fetching stations
       // Don't show alert, just log
     } finally {
       isFetchingRef.current = false;
@@ -103,7 +99,6 @@ export const useLocation = (): UseLocationResult => {
     const initLocation = async () => {
       // Skip location on web platform
       if (Platform.OS === "web") {
-        console.log("Web platform detected, using default location");
         setLoading(false);
         // Fetch stations for default location on web
         fetchStations(DEFAULT_REGION.latitude, DEFAULT_REGION.longitude);
@@ -111,11 +106,9 @@ export const useLocation = (): UseLocationResult => {
       }
 
       try {
-        console.log("Requesting location permission...");
         const permissionResult = await requestLocationPermission();
 
         if (!permissionResult.granted) {
-          console.log("Location permission denied, using default location");
           setPermissionDenied(true);
 
           if (isMounted.current) {
@@ -126,8 +119,6 @@ export const useLocation = (): UseLocationResult => {
           return;
         }
 
-        console.log("Starting location watch...");
-
         // Start watching position
         const subscription = await Location.watchPositionAsync(
           {
@@ -137,12 +128,6 @@ export const useLocation = (): UseLocationResult => {
           },
           (newLocation) => {
             if (!isMounted.current) return;
-
-            console.log(
-              "Location updated:",
-              newLocation.coords.latitude,
-              newLocation.coords.longitude
-            );
 
             setLocation(newLocation);
             setLoading(false);
@@ -161,7 +146,6 @@ export const useLocation = (): UseLocationResult => {
                 lon
               );
               if (dist > 2.0) {
-                console.log("Moved 2km, refetching stations...");
                 fetchStations(lat, lon);
               }
             }
@@ -169,9 +153,7 @@ export const useLocation = (): UseLocationResult => {
         );
 
         locationSubscription.current = subscription;
-        console.log("Location watch started successfully");
       } catch (error) {
-        console.log("Error getting location:", error);
         if (isMounted.current) {
           setLoading(false);
           // Fetch stations for default location on error
@@ -190,7 +172,7 @@ export const useLocation = (): UseLocationResult => {
         try {
           locationSubscription.current.remove();
         } catch (error) {
-          console.log("Cleanup: subscription removal skipped");
+          // Cleanup error
         }
         locationSubscription.current = null;
       }

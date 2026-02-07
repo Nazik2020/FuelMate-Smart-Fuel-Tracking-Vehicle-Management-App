@@ -4,8 +4,8 @@ import { FuelPrices, getFuelPrices } from "@/config/fuelPriceService";
 import { getUserVehicles, Vehicle } from "@/config/vehicleService";
 import { Colors } from "@/constants/theme";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useFocusEffect, useRouter } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
 import {
     ActivityIndicator,
     Alert,
@@ -40,9 +40,12 @@ export default function AddFuelEntry() {
     const [showVehicleDropdown, setShowVehicleDropdown] = useState(false);
     const [showFuelTypeDropdown, setShowFuelTypeDropdown] = useState(false);
 
-    useEffect(() => {
-        loadData();
-    }, []);
+    // Fetch vehicles when screen comes into focus
+    useFocusEffect(
+        useCallback(() => {
+            loadData();
+        }, [])
+    );
 
     // Recalculate when inputs change
     useEffect(() => {
@@ -64,7 +67,7 @@ export default function AddFuelEntry() {
                 handleVehicleSelect(userVehicles[0]);
             }
         } catch (error) {
-            console.error("Error loading data:", error);
+            // Error loading data
         } finally {
             setLoading(false);
         }
@@ -165,7 +168,6 @@ export default function AddFuelEntry() {
             setFuelAmountRs("");
             setStation("");
         } catch (error) {
-            console.error("Error saving fuel log:", error);
             Alert.alert("Error", "Failed to save entry. Please try again.");
         } finally {
             setSaving(false);

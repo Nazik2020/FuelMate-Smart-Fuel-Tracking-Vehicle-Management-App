@@ -45,7 +45,7 @@ export default function HomeScreen() {
       // but keep original object structure mostly
       setFuelLogs(logs);
     } catch (error) {
-      console.error("Error fetching fuel logs:", error);
+      // Error fetching logs
     }
   };
 

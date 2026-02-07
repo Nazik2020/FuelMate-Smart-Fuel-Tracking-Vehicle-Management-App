@@ -192,7 +192,6 @@ export default function AdminSettings() {
       setNotifData({ recipient: "Search", title: "", message: "" });
       setActiveFilter("All Users");
     } catch (error) {
-      console.error("Error sending notification:", error);
       Alert.alert(
         "Error",
         "Failed to send notification. Please try again."
@@ -204,7 +203,7 @@ export default function AdminSettings() {
     try {
       await signOut(auth);
     } catch (error) {
-      console.warn("Sign-out failed", error);
+      // Silent logout error
     }
     router.replace("/loginpage");
   };

@@ -51,9 +51,9 @@ export const calculateDistance = (
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos(deg2rad(lat1)) *
-      Math.cos(deg2rad(lat2)) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
+    Math.cos(deg2rad(lat2)) *
+    Math.sin(dLon / 2) *
+    Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   const d = R * c; // Distance in km
   return parseFloat(d.toFixed(1));
@@ -82,7 +82,6 @@ export const requestLocationPermission = async (): Promise<{
       await Location.requestForegroundPermissionsAsync();
 
     if (status !== "granted") {
-      console.log("Location permission denied, canAskAgain:", canAskAgain);
       return {
         granted: false,
         useDefault: true,
@@ -92,7 +91,6 @@ export const requestLocationPermission = async (): Promise<{
 
     return { granted: true, useDefault: false, canAskAgain: true };
   } catch (error) {
-    console.log("Error requesting location permission:", error);
     return { granted: false, useDefault: true, canAskAgain: false };
   }
 };
@@ -108,7 +106,6 @@ export const getCurrentLocation =
       });
       return location;
     } catch (error) {
-      console.log("Error getting current location:", error);
       return null;
     }
   };
@@ -154,7 +151,6 @@ export const fetchNearbyFuelStations = async (
 
     return [];
   } catch (error) {
-    console.log("Error fetching stations:", error);
     throw new Error("Could not fetch nearby fuel stations");
   }
 };
@@ -187,7 +183,6 @@ export const searchLocation = async (query: string): Promise<any[]> => {
     const data = await response.json();
     return data;
   } catch (error) {
-    console.log("Search error:", error);
     return [];
   }
 };
@@ -232,7 +227,6 @@ export const fetchRoute = async (
 
     return null;
   } catch (error) {
-    console.log("Route error:", error);
     throw new Error("Could not fetch directions");
   }
 };

@@ -150,7 +150,6 @@ export default function VehicleManagement() {
             setVehicles(vehiclesData);
             setStats(statsData);
         } catch (error) {
-            console.error("Error loading vehicles:", error);
             Alert.alert("Error", "Failed to load vehicles");
         } finally {
             setLoading(false);
@@ -184,14 +183,6 @@ export default function VehicleManagement() {
     // Pagination
     const visibleVehicles = filteredVehicles.slice(0, vehiclesToShow);
     const hasMoreVehicles = vehiclesToShow < filteredVehicles.length;
-
-    // Debug logging
-    console.log('🚗 Vehicle Management Debug:');
-    console.log('  Total vehicles:', vehicles.length);
-    console.log('  Filtered vehicles:', filteredVehicles.length);
-    console.log('  Vehicles to show:', vehiclesToShow);
-    console.log('  Visible vehicles:', visibleVehicles.length);
-    console.log('  Has more vehicles:', hasMoreVehicles);
 
     return (
         <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>

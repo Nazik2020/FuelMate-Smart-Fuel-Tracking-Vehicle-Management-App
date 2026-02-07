@@ -20,7 +20,6 @@ export default function AdminLayout() {
   // Listen to auth state directly
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      console.log("Admin Layout: Auth state changed, user:", firebaseUser?.email || "null");
       setUser(firebaseUser);
       setLoading(false);
     });
